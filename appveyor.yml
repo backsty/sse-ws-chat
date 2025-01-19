@@ -4,7 +4,7 @@ stack: node 20
 
 branches:
   only:
-    - video
+    - main
 
 cache:
   - node_modules
