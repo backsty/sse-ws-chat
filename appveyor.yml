@@ -1,0 +1,27 @@
+image: Ubuntu2204
+
+stack: node 20
+
+branches:
+  only:
+    - video
+
+cache:
+  - node_modules
+
+install:
+  - yarn install
+
+build_script:
+  - yarn build
+
+test_script:
+  - yarn lint
+  - yarn test
+
+deploy_script:
+  - git config --global user.name AppVeyor
+  - git config --global user.email ci@appveyor.com
+  - git config --global credential.helper store
+  - echo "https://$GITHUB_TOKEN:x-oauth-basic@github.com" > "$HOME/.git-credentials"
+  - npx gh-pages -d dist -u "appveyor-bot <ci@appveyor.com>"
