@@ -5,22 +5,28 @@ const baseConfig = require('./webpack.config.cjs');
 
 module.exports =  merge(baseConfig, {
   mode: 'development',
-  devtool: 'inline-source-map',
+  devtool: 'eval-source-map',
   devServer: {
     static: {
       directory: path.resolve(__dirname, 'dist'),
       publicPath: '/',
     },
-    proxy: [{
-      target: 'http://localhost:7070',
-      secure: false,
-      changeOrigin: true
-    }],
-    compress: true,
+    proxy: {
+      '/ws': {
+        target: 'ws://localhost:7070',
+        ws: true
+      },
+      '/api': {
+        target: 'http://localhost:7070',
+        pathRewrite: { '^/api': '' }
+      }
+    },
     port: 8080,
-    open: false,
     hot: true,
     historyApiFallback: true,
+    client: {
+      overlay: true,
+      progress: true
+    }
   },
-  plugins: [new webpack.HotModuleReplacementPlugin()],
 });

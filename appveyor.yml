@@ -8,6 +8,13 @@ branches:
 
 cache:
   - node_modules
+  - .yarn-cache
+
+environment:
+  GITHUB_TOKEN:
+    secure: YOUR_ENCRYPTED_TOKEN  # Получить в GitHub -> Settings -> Developer settings -> Personal access tokens
+  RENDER_TOKEN:
+    secure: YOUR_RENDER_TOKEN     # Получить в Render Dashboard
 
 install:
   - yarn install
@@ -17,11 +24,16 @@ build_script:
 
 test_script:
   - yarn lint
-  - yarn test
 
 deploy_script:
   - git config --global user.name AppVeyor
   - git config --global user.email ci@appveyor.com
   - git config --global credential.helper store
   - echo "https://$GITHUB_TOKEN:x-oauth-basic@github.com" > "$HOME/.git-credentials"
-  - npx gh-pages -d dist -u "appveyor-bot <ci@appveyor.com>"
+  - yarn deploy
+
+notifications:
+  - provider: Email
+    on_build_success: false
+    on_build_failure: true
+    on_build_status_changed: true

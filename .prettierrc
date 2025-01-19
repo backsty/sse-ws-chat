@@ -6,8 +6,10 @@
   "singleQuote": true,
   "trailingComma": "all",
   "bracketSpacing": true,
-  "arrowParens": "avoid",
+  "bracketSameLine": false,
+  "arrowParens": "always",
   "endOfLine": "lf",
+  "jsxSingleQuote": false,
   "quoteProps": "as-needed",
-  "proseWrap": "preserve"
+  "htmlWhitespaceSensitivity": "css"
 }

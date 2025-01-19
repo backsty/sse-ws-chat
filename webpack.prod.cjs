@@ -10,11 +10,17 @@ module.exports = merge(baseConfig, {
   devtool: 'source-map',
   output: {
     publicPath: ASSET_PATH,
+    clean: true
   },
   optimization: {
+    splitChunks: {
+      chunks: 'all',
+      name: false
+    },
     minimize: true,
     minimizer: [
       new TerserPlugin({
+        parallel: true,
         terserOptions: {
           format: {
             comments: false,
@@ -22,7 +28,11 @@ module.exports = merge(baseConfig, {
         },
         extractComments: false,
       }),
-      new CssMinimizerPlugin(),
+      new CssMinimizerPlugin({
+        minimizerOptions: {
+          preset: ['default', { discardComments: { removeAll: true } }]
+        }
+      }),
     ],
   },
   performance: {
