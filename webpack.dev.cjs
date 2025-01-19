@@ -12,7 +12,6 @@ module.exports =  merge(baseConfig, {
       publicPath: '/',
     },
     proxy: [{
-      context: ['/tickets'],
       target: 'http://localhost:7070',
       secure: false,
       changeOrigin: true

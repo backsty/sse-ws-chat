@@ -3,7 +3,7 @@ const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const baseConfig = require('./webpack.config.cjs');
 
-const ASSET_PATH = process.env.ASSET_PATH || '/ahj-homeworks/http/';
+const ASSET_PATH = process.env.ASSET_PATH || '/sse-ws-chat/';
 
 module.exports = merge(baseConfig, {
   mode: 'production',
