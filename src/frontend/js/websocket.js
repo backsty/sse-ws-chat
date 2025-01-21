@@ -1,9 +1,10 @@
 export default class WebSocketClient {
   constructor() {
-    const backendUrl = process.env.NODE_ENV === 'production'
-            ? 'wss://sse-ws-chat.onrender.com'
-            : `ws://${window.location.hostname}:7070`;
-    
+    const backendUrl =
+      process.env.NODE_ENV === 'production'
+        ? 'wss://sse-ws-chat.onrender.com'
+        : 'ws://localhost:7070';
+
     this.url = backendUrl;
     this.ws = null;
     this.handlers = new Map();
@@ -13,51 +14,51 @@ export default class WebSocketClient {
 
   async connect() {
     try {
-        console.log(`Подключение к ${this.url}`);
-        this.ws = new WebSocket(this.url);
-        await this.waitForConnection();
-        this.bindEvents();
-        return true;
+      console.log(`Подключение к ${this.url}`);
+      this.ws = new WebSocket(this.url);
+      await this.waitForConnection();
+      this.bindEvents();
+      return true;
     } catch (error) {
-        console.error('Ошибка подключения:', error);
-        await this.handleReconnect();
-        return false;
+      console.error('Ошибка подключения:', error);
+      await this.handleReconnect();
+      return false;
     }
   }
 
   async handleReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        this.reconnectAttempts++;
-        const timeout = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-        await new Promise(resolve => setTimeout(resolve, timeout));
-        return this.connect();
+      this.reconnectAttempts++;
+      const timeout = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+      await new Promise((resolve) => setTimeout(resolve, timeout));
+      return this.connect();
     }
   }
 
   waitForConnection() {
     return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-            reject(new Error('Таймаут подключения'));
-        }, 5000);
+      const timeout = setTimeout(() => {
+        reject(new Error('Таймаут подключения'));
+      }, 5000);
 
-        this.ws.onopen = () => {
-            clearTimeout(timeout);
-            this.reconnectAttempts = 0;
-            console.log('WebSocket соединение установлено');
-            resolve();
-        };
+      this.ws.onopen = () => {
+        clearTimeout(timeout);
+        this.reconnectAttempts = 0;
+        console.log('WebSocket соединение установлено');
+        resolve();
+      };
 
-        this.ws.onerror = (error) => {
-            clearTimeout(timeout);
-            reject(error);
-        };
+      this.ws.onerror = (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      };
     });
   }
 
   bindEvents() {
     this.ws.onclose = () => {
-        console.log('WebSocket соединение закрыто');
-        this.handleReconnect();
+      console.log('WebSocket соединение закрыто');
+      this.handleReconnect();
     };
 
     this.ws.onmessage = this.handleMessage.bind(this);
