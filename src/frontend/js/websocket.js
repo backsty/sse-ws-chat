@@ -1,80 +1,80 @@
 export default class WebSocketClient {
-    constructor(url) {
-        this.url = url;
-        this.ws = null;
-        this.handlers = new Map();
-        this.reconnectAttempts = 0;
-        this.maxReconnectAttempts = 5;
+  constructor(url) {
+    this.url = url;
+    this.ws = null;
+    this.handlers = new Map();
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
+  }
+
+  connect() {
+    return new Promise((resolve, reject) => {
+      try {
+        this.ws = new WebSocket(this.url);
+        this.bindEvents(resolve, reject);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  bindEvents(resolve, reject) {
+    this.ws.onopen = () => {
+      console.log('WebSocket соединение установлено');
+      this.reconnectAttempts = 0;
+      resolve();
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('WebSocket ошибка:', error);
+      reject(error);
+    };
+
+    this.ws.onclose = () => {
+      console.log('WebSocket соединение закрыто');
+      this.reconnect();
+    };
+
+    this.ws.onmessage = this.handleMessage.bind(this);
+  }
+
+  handleMessage(event) {
+    try {
+      const message = JSON.parse(event.data);
+      const handler = this.handlers.get(message.type);
+      if (handler) handler(message);
+    } catch (error) {
+      console.error('Ошибка обработки сообщения:', error);
     }
+  }
 
-    connect() {
-        return new Promise((resolve, reject) => {
-            try {
-                this.ws = new WebSocket(this.url);
-                this.bindEvents(resolve, reject);
-            } catch (error) {
-                reject(error);
-            }
-        });
+  reconnect() {
+    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      this.reconnectAttempts++;
+      const timeout = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+      setTimeout(() => this.connect(), timeout);
     }
+  }
 
-    bindEvents(resolve, reject) {
-        this.ws.onopen = () => {
-            console.log('WebSocket соединение установлено');
-            this.reconnectAttempts = 0;
-            resolve();
-        };
+  on(type, callback) {
+    this.handlers.set(type, callback);
+  }
 
-        this.ws.onerror = (error) => {
-            console.error('WebSocket ошибка:', error);
-            reject(error);
-        };
-
-        this.ws.onclose = () => {
-            console.log('WebSocket соединение закрыто');
-            this.reconnect();
-        };
-
-        this.ws.onmessage = this.handleMessage.bind(this);
+  send(message) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message));
     }
+  }
 
-    handleMessage(event) {
-        try {
-            const message = JSON.parse(event.data);
-            const handler = this.handlers.get(message.type);
-            if (handler) handler(message);
-        } catch (error) {
-            console.error('Ошибка обработки сообщения:', error);
-        }
-    }
+  login(nickname) {
+    this.send({ type: 'login', nickname });
+  }
 
-    reconnect() {
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-            this.reconnectAttempts++;
-            const timeout = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-            setTimeout(() => this.connect(), timeout);
-        }
-    }
+  sendMessage(text) {
+    this.send({ type: 'message', text });
+  }
 
-    on(type, callback) {
-        this.handlers.set(type, callback);
-    }
-
-    send(message) {
-        if (this.ws?.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify(message));
-        }
-    }
-
-    login(nickname) {
-        this.send({ type: 'login', nickname });
-    }
-
-    sendMessage(text) {
-        this.send({ type: 'message', text });
-    }
-
-    close() {
-        this.ws?.close();
-    }
-};
+  close() {
+    this.ws?.close();
+  }
+}
