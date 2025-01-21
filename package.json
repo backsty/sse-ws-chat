@@ -2,18 +2,19 @@
   "name": "sse-ws-chat",
   "version": "1.0.0",
   "description": "sse-ws-chat",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/backsty/sse-ws-chat"
   },
-  "main": "./src/index.js",
+  "main": "./src/frontend/index.js",
   "private": true,
   "scripts": {
     "start": "webpack serve --config webpack.dev.cjs --mode development",
     "build": "webpack --config webpack.prod.cjs --mode production",
     "watch": "webpack --watch --config webpack.dev.cjs --mode development",
 
-    "server:dev": "nodemon src/backend/server.js",
+    "server:dev": "nodemon --experimental-modules src/backend/server.js",
     "server:prod": "cross-env NODE_ENV=production node src/backend/server.js",
     "dev": "concurrently \"yarn server:dev\" \"yarn start\"",
 

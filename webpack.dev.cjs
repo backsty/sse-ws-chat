@@ -11,16 +11,12 @@ module.exports =  merge(baseConfig, {
       directory: path.resolve(__dirname, 'dist'),
       publicPath: '/',
     },
-    proxy: {
-      '/ws': {
-        target: 'ws://localhost:7070',
-        ws: true
-      },
-      '/api': {
-        target: 'http://localhost:7070',
-        pathRewrite: { '^/api': '' }
-      }
-    },
+    proxy: [{
+      context: ['/ws', '/api'],
+      target: 'http://localhost:7070',
+      ws: true,
+      changeOrigin: true
+    }],
     port: 8080,
     hot: true,
     historyApiFallback: true,
