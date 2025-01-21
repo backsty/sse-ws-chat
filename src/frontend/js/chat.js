@@ -4,7 +4,7 @@ import { createMessageElement, createUserElement } from './templates.js';
 export default class Chat {
   constructor() {
     this.client = null;
-    this.nickname = null;
+    this.nickname = localStorage.getItem('nickname');
     this.messagesList = document.getElementById('messages');
     this.usersList = document.getElementById('usersList');
     this.messageForm = document.getElementById('messageForm');
@@ -15,32 +15,41 @@ export default class Chat {
 
   async init() {
     try {
-      const nickname = await this.promptNickname();
-      if (!nickname) return;
+        if (!this.nickname) {
+            const nickname = await this.promptNickname();
+            if (!nickname) return;
+            
+            this.nickname = nickname;
+            localStorage.setItem('nickname', nickname);
+        }
 
-      await this.initWebSocket(nickname);
-      this.bindEvents();
+        await this.initWebSocket(this.nickname);
+        this.bindEvents();
     } catch (error) {
-      console.error('Ошибка инициализации чата:', error);
-      setTimeout(() => this.init(), 3000);
+        console.error('Ошибка инициализации:', error);
+        localStorage.removeItem('nickname');
+        setTimeout(() => this.init(), 3000);
     }
   }
 
   async promptNickname() {
     const nickname = prompt('Введите ваш никнейм:');
-    if (!nickname?.trim()) return null;
+    if (!nickname?.trim()) {
+        return null;
+    }
     return nickname.trim();
   }
 
   async initWebSocket(nickname) {
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = location.hostname === 'localhost' ? 'localhost:7070' : location.host;
-
-    this.client = new WebSocketClient(`${protocol}//${host}`);
-
+    this.client = new WebSocketClient();
     this.setupWebSocketHandlers();
-    await this.client.connect();
-    this.client.login(nickname);
+    const connected = await this.client.connect();
+    
+    if (connected) {
+      this.client.login(nickname);
+    } else {
+      throw new Error('Не удалось подключиться к серверу');
+    }
   }
 
   setupWebSocketHandlers() {
@@ -64,11 +73,12 @@ export default class Chat {
 
   handleLogin(message) {
     if (!message.success) {
-      alert(message.message);
-      this.init();
-      return;
+        localStorage.removeItem('nickname');
+        alert(message.message);
+        this.init();
+        return;
     }
-    this.nickname = message.nickname;
+    console.log('Успешная авторизация');
   }
 
   updateUserList(users) {

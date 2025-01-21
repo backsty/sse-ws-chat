@@ -41,9 +41,20 @@ wsServer.on('connection', (ws, req) => {
   ws.on('message', (messageData) => {
     try {
       const message = JSON.parse(messageData);
+      
+      if (message.type === 'login') {
+          const success = chat.addUser(ws, message.nickname);
+          ws.send(JSON.stringify({
+              type: 'login',
+              success,
+              message: success ? null : 'Никнейм уже занят'
+          }));
+          return;
+      }
+
       handleMessage(ws, message, userId);
     } catch (error) {
-      console.error('Error processing message:', error);
+        console.error('Ошибка обработки сообщения:', error);
     }
   });
 
