@@ -14,6 +14,14 @@ const app = new Koa();
 const chat = new Chat();
 const port = process.env.PORT || 7070;
 
+app.use(async (ctx, next) => {
+  if (ctx.path === '/') {
+    ctx.body = 'WebSocket Server Running';
+    return;
+  }
+  await next();
+});
+
 app.use(serve(path.join(__dirname, '../../dist')));
 
 const server = app.listen(port, () => {
@@ -23,7 +31,7 @@ const server = app.listen(port, () => {
 const wsServer = new WebSocketServer({
   server,
   clientTracking: true,
-  path: '/',
+  path: '/ws',
   pingInterval: 30000,
   pingTimeout: 5000,
 });
