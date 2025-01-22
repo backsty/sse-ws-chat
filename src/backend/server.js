@@ -23,6 +23,7 @@ const server = app.listen(port, () => {
 const wsServer = new WebSocketServer({
   server,
   clientTracking: true,
+  path: '/',
   pingInterval: 30000,
   pingTimeout: 5000,
 });

@@ -1,11 +1,8 @@
 export default class WebSocketClient {
   constructor() {
-    const backendUrl =
-      process.env.NODE_ENV === 'production'
-        ? 'wss://sse-ws-chat.onrender.com'
-        : 'ws://localhost:7070';
-
-    this.url = backendUrl;
+    this.url = process.env.NODE_ENV === 'production'
+      ? 'wss://sse-ws-chat.onrender.com'
+      : 'ws://localhost:7070';
     this.ws = null;
     this.handlers = new Map();
     this.reconnectAttempts = 0;
@@ -21,8 +18,11 @@ export default class WebSocketClient {
       return true;
     } catch (error) {
       console.error('Ошибка подключения:', error);
-      await this.handleReconnect();
-      return false;
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        await this.handleReconnect();
+        return false;
+      }
+      throw new Error('Превышено количество попыток подключения');
     }
   }
 

@@ -76,7 +76,8 @@ module.exports = {
       filename: 'css/[name].[contenthash].css',
     }),
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+      'process.env.BACKEND_URL': JSON.stringify('https://sse-ws-chat.onrender.com')
     }),
   ],
 };
