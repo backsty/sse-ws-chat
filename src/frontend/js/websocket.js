@@ -1,8 +1,11 @@
 export default class WebSocketClient {
   constructor() {
+    const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsPath = '/ws';
+    
     this.url = process.env.NODE_ENV === 'production'
-      ? 'wss://sse-ws-chat.onrender.com'
-      : 'ws://localhost:7070';
+      ? `${wsProtocol}//sse-ws-chat.onrender.com${wsPath}`
+      : `ws://localhost:7070${wsPath}`;
     this.ws = null;
     this.handlers = new Map();
     this.reconnectAttempts = 0;
