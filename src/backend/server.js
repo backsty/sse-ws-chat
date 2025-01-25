@@ -42,6 +42,13 @@ const messageHandlers = {
   message: handleChatMessage
 };
 
+const CLOSE_CODES = {
+  NORMAL: 1000,
+  GOING_AWAY: 1001,
+  PROTOCOL_ERROR: 1002,
+  INVALID_DATA: 1003
+};
+
 wsServer.on('connection', (ws, req) => {
   const userId = nanoid();
   const clientIp = req.socket.remoteAddress;
@@ -65,13 +72,18 @@ wsServer.on('connection', (ws, req) => {
     }
   });
 
-  ws.on('close', () => {
+  ws.on('close', (code, reason) => {
     chat.removeUser(ws);
-    console.log(`Отключение: ${clientIp} (${userId})`);
+    console.log(`Отключение: ${clientIp} (${userId}), код: ${code}`);
   });
 
   ws.on('error', (error) => {
-    console.error(`WebSocket ошибка (${userId}):`, error);
+    if (error.code === 'ECONNRESET') {
+      console.log(`Соединение сброшено: ${clientIp} (${userId})`);
+    } else {
+      console.error(`WebSocket ошибка (${userId}):`, error);
+    }
+    ws.close(CLOSE_CODES.NORMAL);
     chat.removeUser(ws);
   });
 });

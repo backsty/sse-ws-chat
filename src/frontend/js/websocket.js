@@ -47,27 +47,44 @@ export default class WebSocketClient {
       this.close();
     }
 
-    try {
-      this.ws = new WebSocket(this.getWebSocketUrl());
-      await this.waitForConnection();
-      this.connected = true;
-      this.bindEvents();
-      return true;
-    } catch (error) {
-      console.error('Ошибка подключения:', error);
-      throw error;
-    }
+    return new Promise((resolve, reject) => {
+      try {
+        this.ws = new WebSocket(this.getWebSocketUrl());
+        
+        const timeout = setTimeout(() => {
+          this.close();
+          reject(new Error('Таймаут подключения'));
+        }, 5000);
+
+        this.ws.onopen = () => {
+          clearTimeout(timeout);
+          this.connected = true;
+          this.bindEvents();
+          resolve(true);
+        };
+
+        this.ws.onerror = (error) => {
+          clearTimeout(timeout);
+          this.connected = false;
+          reject(error);
+        };
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   waitForConnection() {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
+        this.close();
         reject(new Error('Таймаут подключения'));
       }, 5000);
 
       this.ws.onopen = () => {
         clearTimeout(timeout);
         this.connected = true;
+        this.bindEvents();
         resolve();
       };
 
@@ -112,9 +129,12 @@ export default class WebSocketClient {
     }
   }
 
-  handleClose() {
+  handleClose(event) {
     this.connected = false;
-    this.handleReconnect().catch(console.error);
+    if (event.code !== 1000) {
+      console.log('WebSocket закрыт с кодом:', event.code);
+      this.reconnect();
+    }
   }
 
   handleError(error) {
@@ -143,13 +163,26 @@ export default class WebSocketClient {
   }
 
   login(nickname, sessionId) {
-    if (!this.isConnected()) {
-      throw new Error('WebSocket не подключен');
-    }
-    this.send({
-      type: 'login',
-      nickname,
-      sessionId
+    return new Promise((resolve, reject) => {
+      if (!this.isConnected()) {
+        reject(new Error('WebSocket не подключен'));
+        return;
+      }
+
+      const loginHandler = (response) => {
+        if (response.type === 'login') {
+          this.handlers.delete('login');
+          resolve(response);
+        }
+      };
+
+      this.handlers.set('login', loginHandler);
+      
+      this.send({
+        type: 'login',
+        nickname,
+        sessionId
+      });
     });
   }
 
@@ -172,7 +205,11 @@ export default class WebSocketClient {
   close() {
     if (this.ws) {
       this.connected = false;
-      this.ws.close();
+      try {
+        this.ws.close(1000); // Normal closure
+      } catch (error) {
+        console.error('Ошибка закрытия WebSocket:', error);
+      }
       this.ws = null;
     }
   }

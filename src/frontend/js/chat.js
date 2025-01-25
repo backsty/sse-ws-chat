@@ -1,11 +1,17 @@
 import WebSocketClient from './websocket.js';
 import { createMessageElement, createUserElement } from './templates.js';
+import { setCookie, getCookie, deleteCookie, hasCookie } from './utils/cookies.js';
+
+const COOKIE_SETTINGS = {
+  nickname: 'nickname',
+  sessionId: 'sessionId'
+};
 
 export default class Chat {
   constructor() {
     this.webSocket = null;
-    this.nickname = null;
-    this.sessionId = crypto.randomUUID();
+    this.nickname = getCookie(COOKIE_SETTINGS.nickname);
+    this.sessionId = getCookie(COOKIE_SETTINGS.sessionId) || crypto.randomUUID();
     this.messagesList = document.getElementById('messages');
     this.usersList = document.getElementById('usersList');
     this.messageForm = document.getElementById('messageForm');
@@ -18,14 +24,20 @@ export default class Chat {
     if (this.initialized) return;
     
     try {
-      this.nickname = await this.promptNickname();
-      if (!this.nickname) return;
+      if (!this.nickname || !this.validateNickname(this.nickname).valid) {
+        this.nickname = await this.promptNickname();
+        if (!this.nickname) return;
+        
+        setCookie('nickname', this.nickname);
+        setCookie('sessionId', this.sessionId);
+      }
       
       await this.initWebSocket();
       this.bindEvents();
       this.initialized = true;
     } catch (error) {
       console.error('Ошибка инициализации:', error);
+      this.cleanup();
       alert('Ошибка подключения к чату. Попробуйте позже.');
     }
   }
@@ -56,13 +68,17 @@ export default class Chat {
     try {
       this.webSocket = new WebSocketClient();
       await this.webSocket.connect();
+      this.setupWebSocketHandlers();
       
-      if (this.webSocket.isConnected()) {
-        this.setupWebSocketHandlers();
-        this.webSocket.login(this.nickname, this.sessionId);
+      const loginResult = await this.webSocket.login(this.nickname, this.sessionId);
+      if (!loginResult.success) {
+        throw new Error(loginResult.message || 'Ошибка авторизации');
       }
+      
+      return true;
     } catch (error) {
-      console.error('Ошибка подключения к WebSocket:', error);
+      console.error('Ошибка подключения:', error);
+      this.cleanup();
       throw error;
     }
   }
@@ -99,17 +115,21 @@ export default class Chat {
   }
 
   async handleLogin(message) {
-    if (!message.success) {
-      console.error('Ошибка авторизации:', message.message);
-      this.authorized = false;
-      if (message.type === 'auth') {
+    try {
+      if (!message.success) {
+        console.error('Ошибка авторизации:', message.message);
+        this.authorized = false;
+        this.cleanup();
         await this.reconnect();
+        return;
       }
-      return;
+      
+      this.authorized = true;
+      console.log('Успешная авторизация');
+    } catch (error) {
+      console.error('Ошибка обработки авторизации:', error);
+      this.cleanup();
     }
-    
-    this.authorized = true;
-    console.log('Успешная авторизация');
   }
 
   handleError(error) {
@@ -148,12 +168,27 @@ export default class Chat {
     this.messagesList.scrollTop = this.messagesList.scrollHeight;
   }
 
+  cleanup() {
+    try {
+      deleteCookie(COOKIE_SETTINGS.nickname);
+      deleteCookie(COOKIE_SETTINGS.sessionId);
+      this.nickname = null;
+      this.sessionId = crypto.randomUUID();
+      this.initialized = false;
+      this.authorized = false;
+    } catch (error) {
+      console.error('Ошибка очистки состояния:', error);
+    }
+  }
+
   destroy() {
     if (this.webSocket) {
       this.webSocket.close();
       this.webSocket = null;
     }
+    this.cleanup();
     this.initialized = false;
+    this.authorized = false;
     this.messagesList.innerHTML = '';
     this.usersList.innerHTML = '';
   }

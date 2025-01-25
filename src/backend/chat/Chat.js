@@ -87,9 +87,38 @@ export default class Chat {
     this.broadcastSystemMessage(`${user.nickname} покинул чат`);
   }
 
+  sendWelcomeMessage(user) {
+    user.send({
+      type: 'message',
+      from: 'system',
+      text: `Добро пожаловать в чат, ${user.nickname}!`,
+      timestamp: new Date()
+    });
+  }
+
   broadcast(message) {
     const data = JSON.stringify(message);
-    this.users.forEach(user => user.isConnected() && user.send(data));
+    this.users.forEach(user => {
+      if (user.isConnected()) {
+        user.send(data);
+      }
+    });
+  }
+
+  broadcastUsers() {
+    this.broadcast({
+      type: 'users',
+      users: Array.from(this.activeNicknames)
+    });
+  }
+
+  broadcastSystemMessage(text) {
+    this.broadcast({
+      type: 'message',
+      from: 'system',
+      text,
+      timestamp: new Date()
+    });
   }
 
   sendMessage(from, text) {
