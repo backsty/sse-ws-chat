@@ -16,6 +16,14 @@ app.use(cors());
 const chat = new Chat();
 const port = process.env.PORT || 7070;
 
+app.use(async (ctx, next) => {
+  if (ctx.path === '/') {
+    ctx.body = 'WebSocket Server Running';
+    return;
+  }
+  await next();
+});
+
 app.use(serve(path.join(__dirname, '../../dist')));
 
 const server = app.listen(port, () => {
@@ -26,7 +34,8 @@ const wsServer = new WebSocketServer({
   server,
   path: '/ws',
   clientTracking: true,
-  perMessageDeflate: false
+  pingInterval: 30000,
+  pingTimeout: 5000,
 });
 
 const messageHandlers = {
@@ -57,15 +66,28 @@ wsServer.on('connection', (ws, req) => {
     }
   });
 
-  ws.on('close', () => {
-    chat.removeUser(ws);
-    console.log(`Отключение: ${clientIp} (${userId})`);
+  ws.on('message', (messageData) => {
+    try {
+      const message = JSON.parse(messageData);
+      
+      if (message.type === 'login') {
+          const success = chat.addUser(ws, message.nickname);
+          ws.send(JSON.stringify({
+              type: 'login',
+              success,
+              message: success ? null : 'Никнейм уже занят'
+          }));
+          return;
+      }
+
+      handleMessage(ws, message, userId);
+    } catch (error) {
+        console.error('Ошибка обработки сообщения:', error);
+    }
   });
 
-  ws.on('error', (error) => {
-    console.error(`WebSocket ошибка (${userId}):`, error);
-    chat.removeUser(ws);
-  });
+  ws.on('close', () => chat.removeUser(ws));
+  ws.on('error', (error) => console.error('WebSocket error:', error));
 });
 
 async function handleMessage(ws, message, userId) {

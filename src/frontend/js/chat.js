@@ -18,27 +18,27 @@ export default class Chat {
     if (this.initialized) return;
     
     try {
-      this.nickname = await this.promptNickname();
-      if (!this.nickname) return;
-      
-      await this.initWebSocket();
-      this.bindEvents();
-      this.initialized = true;
+        if (!this.nickname) {
+            const nickname = await this.promptNickname();
+            if (!nickname) return;
+            
+            this.nickname = nickname;
+            localStorage.setItem('nickname', nickname);
+        }
+
+        await this.initWebSocket(this.nickname);
+        this.bindEvents();
     } catch (error) {
-      console.error('Ошибка инициализации:', error);
-      alert('Ошибка подключения к чату. Попробуйте позже.');
+        console.error('Ошибка инициализации:', error);
+        localStorage.removeItem('nickname');
+        setTimeout(() => this.init(), 3000);
     }
   }
 
   async promptNickname() {
-    while (true) {
-      const nickname = prompt('Введите никнейм (2-20 символов):');
-      if (!nickname) return null;
-      
-      const isValid = this.validateNickname(nickname);
-      if (isValid.valid) return nickname;
-      
-      alert(isValid.message);
+    const nickname = prompt('Введите ваш никнейм:');
+    if (!nickname?.trim()) {
+        return null;
     }
   }
 
@@ -52,18 +52,15 @@ export default class Chat {
     return { valid: true };
   }
 
-  async initWebSocket() {
-    try {
-      this.webSocket = new WebSocketClient();
-      await this.webSocket.connect();
-      
-      if (this.webSocket.isConnected()) {
-        this.setupWebSocketHandlers();
-        this.webSocket.login(this.nickname, this.sessionId);
-      }
-    } catch (error) {
-      console.error('Ошибка подключения к WebSocket:', error);
-      throw error;
+  async initWebSocket(nickname) {
+    this.client = new WebSocketClient();
+    this.setupWebSocketHandlers();
+    const connected = await this.client.connect();
+    
+    if (connected) {
+      this.client.login(nickname);
+    } else {
+      throw new Error('Не удалось подключиться к серверу');
     }
   }
 
@@ -100,12 +97,10 @@ export default class Chat {
 
   async handleLogin(message) {
     if (!message.success) {
-      console.error('Ошибка авторизации:', message.message);
-      this.authorized = false;
-      if (message.type === 'auth') {
-        await this.reconnect();
-      }
-      return;
+        localStorage.removeItem('nickname');
+        alert(message.message);
+        this.init();
+        return;
     }
     
     this.authorized = true;
