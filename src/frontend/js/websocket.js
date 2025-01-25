@@ -1,28 +1,7 @@
-const WS_EVENTS = {
-  OPEN: 'open',
-  CLOSE: 'close',
-  ERROR: 'error',
-  MESSAGE: 'message'
-};
-
 const RECONNECT = {
   MAX_ATTEMPTS: 5,
   BASE_DELAY: 1000,
   MAX_DELAY: 30000
-};
-
-const MESSAGE_TYPES = {
-  LOGIN: 'login',
-  MESSAGE: 'message',
-  USERS: 'users',
-  ERROR: 'error'
-};
-
-const CLOSE_CODES = {
-  NORMAL: 1000,
-  GOING_AWAY: 1001,
-  PROTOCOL_ERROR: 1002,
-  INVALID_DATA: 1003
 };
 
 export default class WebSocketClient {
