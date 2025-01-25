@@ -34,8 +34,7 @@ const wsServer = new WebSocketServer({
   server,
   path: '/ws',
   clientTracking: true,
-  pingInterval: 30000,
-  pingTimeout: 5000,
+  perMessageDeflate: false
 });
 
 const messageHandlers = {
@@ -66,28 +65,15 @@ wsServer.on('connection', (ws, req) => {
     }
   });
 
-  ws.on('message', (messageData) => {
-    try {
-      const message = JSON.parse(messageData);
-      
-      if (message.type === 'login') {
-          const success = chat.addUser(ws, message.nickname);
-          ws.send(JSON.stringify({
-              type: 'login',
-              success,
-              message: success ? null : 'Никнейм уже занят'
-          }));
-          return;
-      }
-
-      handleMessage(ws, message, userId);
-    } catch (error) {
-        console.error('Ошибка обработки сообщения:', error);
-    }
+  ws.on('close', () => {
+    chat.removeUser(ws);
+    console.log(`Отключение: ${clientIp} (${userId})`);
   });
 
-  ws.on('close', () => chat.removeUser(ws));
-  ws.on('error', (error) => console.error('WebSocket error:', error));
+  ws.on('error', (error) => {
+    console.error(`WebSocket ошибка (${userId}):`, error);
+    chat.removeUser(ws);
+  });
 });
 
 async function handleMessage(ws, message, userId) {
