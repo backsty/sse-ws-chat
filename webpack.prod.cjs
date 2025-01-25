@@ -34,6 +34,8 @@ module.exports = merge(baseConfig, {
         }
       }),
     ],
+    runtimeChunk: 'single',
+    moduleIds: 'deterministic',
   },
   performance: {
     hints: 'warning',

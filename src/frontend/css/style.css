@@ -8,6 +8,8 @@
   --tg-color-own-message: #eeffde;
   --tg-color-border: #dadce0;
   --tg-color-hover: #f1f1f1;
+  --tg-color-error: #de3f3f;
+  --tg-color-success: #31b545;
 
   /* Тени */
   --tg-shadow-sm: 0 1px 2px rgba(16, 35, 47, 0.15);
@@ -31,9 +33,11 @@
   --tg-radius-md: 12px;
   --tg-radius-lg: 16px;
   --tg-radius-full: 9999px;
+
+  /* Анимации */
+  --tg-transition: all 0.2s ease;
 }
 
-/* Сброс стилей */
 * {
   margin: 0;
   padding: 0;
@@ -47,20 +51,27 @@ body {
   line-height: 1.3125;
 }
 
-/* Контейнер */
 .container {
   display: grid;
   grid-template-columns: 320px 1fr;
   height: 100vh;
   background: var(--tg-color-bg);
+  overflow: hidden;
 }
 
-/* Сайдбар */
 .sidebar {
   background: var(--tg-color-bg);
   border-right: 1px solid var(--tg-color-border);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar h3 {
+  padding: var(--tg-space-16);
+  font-size: var(--tg-font-size-md);
+  color: var(--tg-color-text-secondary);
+  font-weight: 500;
 }
 
 .users-list {
@@ -73,7 +84,7 @@ body {
   margin: var(--tg-space-2) 0;
   border-radius: var(--tg-radius-sm);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: var(--tg-transition);
 }
 
 .user:hover {
@@ -81,15 +92,16 @@ body {
 }
 
 .user.current {
+  font-weight: bold;
   color: var(--tg-color-primary);
   background: var(--tg-color-secondary);
 }
 
-/* Чат */
 .chat {
   display: flex;
   flex-direction: column;
   background-color: var(--tg-color-bg);
+  position: relative;
 }
 
 .messages {
@@ -99,9 +111,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--tg-space-2);
+  scroll-behavior: smooth;
 }
 
-/* Сообщения */
 .message {
   max-width: 440px;
   padding: 6px var(--tg-space-12) 8px;
@@ -110,15 +122,18 @@ body {
   font-size: var(--tg-font-size-md);
   position: relative;
   animation: messageAppear 0.2s ease;
+  transition: var(--tg-transition);
 }
 
 .message.own {
+  align-self: flex-end;
   background: var(--tg-color-own-message);
   margin-left: auto;
   box-shadow: var(--tg-shadow-sm);
 }
 
 .message.other {
+  align-self: flex-start;
   background: var(--tg-color-bg);
   margin-right: auto;
   border: 1px solid var(--tg-color-border);
@@ -135,6 +150,7 @@ body {
 .message-text {
   word-wrap: break-word;
   white-space: pre-wrap;
+  line-height: 1.4;
 }
 
 .message-time {
@@ -145,7 +161,6 @@ body {
   padding-left: 7px;
 }
 
-/* Форма отправки */
 .message-form {
   padding: var(--tg-space-8) var(--tg-space-16);
   background: var(--tg-color-bg);
@@ -162,10 +177,12 @@ body {
   border-radius: var(--tg-radius-full);
   background: var(--tg-color-secondary);
   font-size: var(--tg-font-size-md);
+  transition: var(--tg-transition);
 }
 
 .message-form input:focus {
   outline: none;
+  background: var(--tg-color-hover);
 }
 
 .message-form button {
@@ -179,22 +196,26 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: var(--tg-transition);
   padding: 8px;
 }
 
 .message-form button:hover {
-  background: var(--tg-color-primary);
   filter: brightness(0.9);
   transform: scale(1.05);
+}
+
+.message-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .message-form button svg {
   width: 24px;
   height: 24px;
+  transition: var(--tg-transition);
 }
 
-/* Анимации */
 @keyframes messageAppear {
   from {
     opacity: 0;
@@ -206,14 +227,47 @@ body {
   }
 }
 
-/* Медиа-запросы */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+.loading::after {
+  content: '';
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--tg-color-secondary);
+  border-top-color: var(--tg-color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 @media (max-width: 768px) {
   .container {
     grid-template-columns: 1fr;
   }
 
   .sidebar {
-    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
   }
 
   .message {
@@ -221,7 +275,6 @@ body {
   }
 }
 
-/* Скроллбар */
 ::-webkit-scrollbar {
   width: 6px;
 }

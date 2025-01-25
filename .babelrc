@@ -1,22 +1,9 @@
 {
   "presets": [
-    [
-      "@babel/preset-env",
-      {
-        "useBuiltIns": "usage",
-        "corejs": 3,
-        "targets": {
-          "node": "current",
-          "browsers": [
-            "last 1 version",
-            "> 1%",
-            "not dead"
-          ]
-        }
+    ["@babel/preset-env", {
+      "targets": {
+        "node": "current"
       }
-    ]
-  ],
-  "plugins": [
-    "@babel/plugin-transform-runtime"
+    }]
   ]
 }

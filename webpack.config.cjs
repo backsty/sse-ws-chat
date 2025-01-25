@@ -1,7 +1,11 @@
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebPackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+
+const isDev = process.env.NODE_ENV === 'development';
+const ASSET_PATH = process.env.ASSET_PATH || '/sse-ws-chat/';
 
 module.exports = {
   entry: './src/frontend/index.js',
@@ -10,7 +14,8 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].[contenthash].js',
     assetModuleFilename: 'assets/[hash][ext][query]',
-    publicPath: '/',
+    publicPath: isDev ? '/' : ASSET_PATH,
+    globalObject: 'self'
   },
   resolve: {
     extensions: ['.js', '.json'],
@@ -62,20 +67,39 @@ module.exports = {
           filename: 'img/[name][ext]'
         }
       },
+      {
+        test: /\.worker\.js$/,
+        use: {
+          loader: 'worker-loader',
+          options: {
+            filename: 'workers/[name].[contenthash].js',
+            publicPath: '/',
+            inline: 'no-fallback'
+          }
+        }
+      }
     ],
   },
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebPackPlugin({
+      favicon: './src/frontend/assets/favicon.ico',
       template: './src/frontend/index.html',
       filename: 'index.html',
-      favicon: './src/frontend/assets/favicon.ico'
     }),
     new MiniCssExtractPlugin({
       filename: 'css/[name].[contenthash].css',
     }),
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
-    }),
+      'process.env': {
+        NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+        RENDER_URL: JSON.stringify('https://sse-ws-chat.onrender.com'),
+        ASSET_PATH: JSON.stringify(ASSET_PATH),
+        WS_URL: JSON.stringify(isDev ? 
+          'ws://localhost:7070/ws' : 
+          'wss://sse-ws-chat.onrender.com/ws'
+        )
+      }
+    })
   ],
 };

@@ -1,3 +1,14 @@
+# Chat Application
+
+Серверная часть: [https://sse-ws-chat.onrender.com](https://sse-ws-chat.onrender.com)
+
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/your-username/sse-ws-chat?svg=true)](https://ci.appveyor.com/project/your-username/sse-ws-chat)
+
+[Demo Page](https://your-username.github.io/sse-ws-chat/)
+
+
+WebSocket chat application with frontend and backend parts.
+
 # Домашнее задание к занятию "8. EventSource, Websockets"
 
 Правила сдачи задания:
@@ -37,7 +48,13 @@
 
 Важная детально: при отключении пользователя он должен удаляться из списка пользователей в левой части.
 
+
+
+
 ---
+
+
+
 
 ## Cloud Dashboard (задача со звёздочкой)
 
