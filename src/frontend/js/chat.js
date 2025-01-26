@@ -4,7 +4,7 @@ import { setCookie, getCookie, deleteCookie, hasCookie } from './utils/cookies.j
 
 const COOKIE_SETTINGS = {
   nickname: 'nickname',
-  sessionId: 'sessionId'
+  sessionId: 'sessionId',
 };
 
 export default class Chat {
@@ -22,16 +22,16 @@ export default class Chat {
 
   async init() {
     if (this.initialized) return;
-    
+
     try {
       if (!this.nickname || !this.validateNickname(this.nickname).valid) {
         this.nickname = await this.promptNickname();
         if (!this.nickname) return;
-        
+
         setCookie('nickname', this.nickname);
         setCookie('sessionId', this.sessionId);
       }
-      
+
       await this.initWebSocket();
       this.bindEvents();
       this.initialized = true;
@@ -46,10 +46,10 @@ export default class Chat {
     while (true) {
       const nickname = prompt('Введите никнейм (2-20 символов):');
       if (!nickname) return null;
-      
+
       const isValid = this.validateNickname(nickname);
       if (isValid.valid) return nickname;
-      
+
       alert(isValid.message);
     }
   }
@@ -69,12 +69,12 @@ export default class Chat {
       this.webSocket = new WebSocketClient();
       await this.webSocket.connect();
       this.setupWebSocketHandlers();
-      
+
       const loginResult = await this.webSocket.login(this.nickname, this.sessionId);
       if (!loginResult.success) {
         throw new Error(loginResult.message || 'Ошибка авторизации');
       }
-      
+
       return true;
     } catch (error) {
       console.error('Ошибка подключения:', error);
@@ -102,9 +102,9 @@ export default class Chat {
   handleSubmit(event) {
     event.preventDefault();
     const text = this.messageInput.value.trim();
-    
+
     if (!text) return;
-    
+
     if (this.webSocket && this.webSocket.isConnected()) {
       this.webSocket.sendMessage(text);
       this.messageInput.value = '';
@@ -123,7 +123,7 @@ export default class Chat {
         await this.reconnect();
         return;
       }
-      
+
       this.authorized = true;
       console.log('Успешная авторизация');
     } catch (error) {

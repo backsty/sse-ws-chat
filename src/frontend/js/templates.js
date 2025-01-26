@@ -1,7 +1,7 @@
 export function createMessageElement(from, text, timestamp, isOwn) {
   const time = new Intl.DateTimeFormat('ru', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }).format(new Date(timestamp));
 
   return `

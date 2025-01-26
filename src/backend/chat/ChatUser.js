@@ -15,7 +15,7 @@ export default class ChatUser {
 
   disconnect() {
     if (!this.connected) return;
-    
+
     this.connected = false;
     if (this.ws.readyState === WebSocket.OPEN) {
       this.ws.close();
@@ -23,9 +23,7 @@ export default class ChatUser {
   }
 
   isConnected() {
-    return this.connected && 
-           this.ws.readyState === WebSocket.OPEN && 
-           !this.isInactive();
+    return this.connected && this.ws.readyState === WebSocket.OPEN && !this.isInactive();
   }
 
   isInactive() {

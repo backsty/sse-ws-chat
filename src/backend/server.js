@@ -34,27 +34,27 @@ const wsServer = new WebSocketServer({
   server,
   path: '/ws',
   clientTracking: true,
-  perMessageDeflate: false
+  perMessageDeflate: false,
 });
 
 const messageHandlers = {
   login: handleLogin,
-  message: handleChatMessage
+  message: handleChatMessage,
 };
 
 const CLOSE_CODES = {
   NORMAL: 1000,
   GOING_AWAY: 1001,
   PROTOCOL_ERROR: 1002,
-  INVALID_DATA: 1003
+  INVALID_DATA: 1003,
 };
 
 wsServer.on('connection', (ws, req) => {
   const userId = nanoid();
   const clientIp = req.socket.remoteAddress;
-  
+
   console.log(`Новое подключение: ${clientIp} (${userId})`);
-  
+
   ws.on('message', async (data) => {
     try {
       const message = JSON.parse(data);
@@ -110,18 +110,20 @@ async function handleMessage(ws, message, userId) {
 
 async function handleLogin(ws, message, userId) {
   const result = chat.addUser(ws, message.nickname, message.sessionId);
-  
-  ws.send(JSON.stringify({
-    type: 'login',
-    success: result.success,
-    message: result.success ? null : result.error
-  }));
+
+  ws.send(
+    JSON.stringify({
+      type: 'login',
+      success: result.success,
+      message: result.success ? null : result.error,
+    }),
+  );
 }
 
 async function handleChatMessage(ws, message, userId) {
   const user = chat.users.get(ws);
   if (!user) return sendError(ws, 'Пользователь не авторизован');
-  
+
   chat.sendMessage(user.nickname, message.text);
 }
 
@@ -130,10 +132,12 @@ function isValidMessage(message) {
 }
 
 function sendError(ws, error) {
-  ws.send(JSON.stringify({
-    type: 'error',
-    message: error
-  }));
+  ws.send(
+    JSON.stringify({
+      type: 'error',
+      message: error,
+    }),
+  );
 }
 
 // Graceful shutdown

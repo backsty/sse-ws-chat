@@ -51,8 +51,7 @@ export default class Chat {
   }
 
   handleExistingUser(nickname, sessionId) {
-    const existingUser = Array.from(this.users.values())
-      .find(user => user.nickname === nickname);
+    const existingUser = Array.from(this.users.values()).find((user) => user.nickname === nickname);
 
     if (existingUser) {
       if (existingUser.sessionId === sessionId) {
@@ -69,7 +68,7 @@ export default class Chat {
     user.sessionId = sessionId;
     this.users.set(ws, user);
     this.activeNicknames.add(nickname);
-    
+
     this.sendWelcomeMessage(user);
     this.broadcastUsers();
 
@@ -92,13 +91,13 @@ export default class Chat {
       type: 'message',
       from: 'system',
       text: `Добро пожаловать в чат, ${user.nickname}!`,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
   broadcast(message) {
     const data = JSON.stringify(message);
-    this.users.forEach(user => {
+    this.users.forEach((user) => {
       if (user.isConnected()) {
         user.send(data);
       }
@@ -108,7 +107,7 @@ export default class Chat {
   broadcastUsers() {
     this.broadcast({
       type: 'users',
-      users: Array.from(this.activeNicknames)
+      users: Array.from(this.activeNicknames),
     });
   }
 
@@ -117,7 +116,7 @@ export default class Chat {
       type: 'message',
       from: 'system',
       text,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -128,14 +127,12 @@ export default class Chat {
       type: 'message',
       from,
       text: this.sanitizeMessage(text),
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
   isValidNickname(nickname) {
-    return nickname.length >= 2 && 
-           nickname.length <= 20 && 
-           NICKNAME_REGEX.test(nickname);
+    return nickname.length >= 2 && nickname.length <= 20 && NICKNAME_REGEX.test(nickname);
   }
 
   isValidMessage(text) {
