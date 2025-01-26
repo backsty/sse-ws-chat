@@ -1,7 +1,10 @@
-const RECONNECT = {
-  MAX_ATTEMPTS: 5,
-  BASE_DELAY: 1000,
-  MAX_DELAY: 30000,
+const SETTINGS = {
+  TIMEOUT: 10000,
+  RECONNECT: {
+    MAX_ATTEMPTS: 5,
+    BASE_DELAY: 1000,
+    MAX_DELAY: 30000
+  }
 };
 
 export default class WebSocketClient {
@@ -15,8 +18,9 @@ export default class WebSocketClient {
 
   getWebSocketUrl() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host =
-      process.env.NODE_ENV === 'development' ? 'localhost:7070' : 'sse-ws-chat.onrender.com';
+    const host = process.env.NODE_ENV === 'development' ? 
+      'localhost:7070' : 
+      'sse-ws-chat.onrender.com';
     return `${protocol}//${host}/ws`;
   }
 
@@ -28,11 +32,11 @@ export default class WebSocketClient {
     return new Promise((resolve, reject) => {
       try {
         this.ws = new WebSocket(this.getWebSocketUrl());
-
+        
         const timeout = setTimeout(() => {
           this.close();
           reject(new Error('Таймаут подключения'));
-        }, 5000);
+        }, SETTINGS.TIMEOUT);
 
         this.ws.onopen = () => {
           clearTimeout(timeout);
@@ -45,6 +49,12 @@ export default class WebSocketClient {
           clearTimeout(timeout);
           this.connected = false;
           reject(error);
+        };
+
+        this.ws.onclose = () => {
+          clearTimeout(timeout);
+          this.connected = false;
+          reject(new Error('Соединение закрыто'));
         };
       } catch (error) {
         reject(error);
