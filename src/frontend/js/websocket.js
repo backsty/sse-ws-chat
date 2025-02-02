@@ -164,7 +164,7 @@ export default class WebSocketClient {
       this.ws.send(JSON.stringify(data));
     } catch (error) {
       console.error('Ошибка отправки:', error);
-      this.reconnect();
+      // this.reconnect();
     }
   }
 
@@ -224,7 +224,7 @@ export default class WebSocketClient {
       this.connected = false;
       this.connecting = false;
       this.permanentlyClosed = true;
-      
+
       try {
         this.ws.close(SETTINGS.CLOSE_CODES.NORMAL);
       } catch (error) {
