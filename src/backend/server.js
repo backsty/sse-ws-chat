@@ -47,6 +47,11 @@ const CLOSE_CODES = {
   GOING_AWAY: 1001,
   PROTOCOL_ERROR: 1002,
   INVALID_DATA: 1003,
+  NO_STATUS: 1005,
+  ABNORMAL: 1006,
+  POLICY_VIOLATION: 1008,
+  MESSAGE_TOO_BIG: 1009,
+  INTERNAL_ERROR: 1011
 };
 
 wsServer.on('connection', (ws, req) => {
@@ -80,10 +85,11 @@ wsServer.on('connection', (ws, req) => {
   ws.on('error', (error) => {
     if (error.code === 'ECONNRESET') {
       console.log(`Соединение сброшено: ${clientIp} (${userId})`);
+      ws.close(CLOSE_CODES.GOING_AWAY);
     } else {
       console.error(`WebSocket ошибка (${userId}):`, error);
+      ws.close(CLOSE_CODES.INTERNAL_ERROR);
     }
-    ws.close(CLOSE_CODES.NORMAL);
     chat.removeUser(ws);
   });
 });

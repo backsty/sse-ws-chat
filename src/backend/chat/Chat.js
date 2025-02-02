@@ -57,10 +57,12 @@ export default class Chat {
       if (existingUser.sessionId === sessionId) {
         existingUser.disconnect();
         this.removeUser(existingUser.ws);
+        return { success: true };
       } else {
         return { success: false, error: 'Никнейм уже занят' };
       }
     }
+    return { success: true };
   }
 
   createNewUser(ws, nickname, sessionId) {
@@ -70,6 +72,7 @@ export default class Chat {
     this.activeNicknames.add(nickname);
 
     this.sendWelcomeMessage(user);
+    this.broadcastSystemMessage(`${nickname} присоединился к чату`);
     this.broadcastUsers();
 
     return { success: true, user };
@@ -79,11 +82,15 @@ export default class Chat {
     const user = this.users.get(ws);
     if (!user) return;
 
+    const nickname = user.nickname;
     user.disconnect();
-    this.activeNicknames.delete(user.nickname);
     this.users.delete(ws);
-    this.broadcastUsers();
-    this.broadcastSystemMessage(`${user.nickname} покинул чат`);
+    this.activeNicknames.delete(user.nickname);
+
+    if (!Array.from(this.users.values()).some(u => u.nickname === nickname)) {
+      this.broadcastSystemMessage(`${nickname} покинул чат`);
+      this.broadcastUsers();
+    }
   }
 
   sendWelcomeMessage(user) {

@@ -3,8 +3,12 @@ const SETTINGS = {
   RECONNECT: {
     MAX_ATTEMPTS: 5,
     BASE_DELAY: 1000,
-    MAX_DELAY: 30000,
+    MAX_DELAY: 30000
   },
+  CLOSE_CODES: {
+    NORMAL: 1000,
+    GOING_AWAY: 1001
+  }
 };
 
 export default class WebSocketClient {
@@ -13,25 +17,34 @@ export default class WebSocketClient {
     this.handlers = new Map();
     this.reconnectAttempts = 0;
     this.connected = false;
-    this.authorized = false;
+    this.connecting = false;
+    this.permanentlyClosed = false;
   }
 
+  // getWebSocketUrl() {
+  //   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  //   const host =
+  //     process.env.NODE_ENV === 'development' ? 'localhost:7070' : 'sse-ws-chat.onrender.com';
+  //   return `${protocol}//${host}/ws`;
+  // }
+
   getWebSocketUrl() {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host =
-      process.env.NODE_ENV === 'development' ? 'localhost:7070' : 'sse-ws-chat.onrender.com';
-    return `${protocol}//${host}/ws`;
+    return 'ws://localhost:7070/ws';
   }
 
   async connect() {
-    if (this.ws) {
-      this.close();
-    }
+    if (this.connecting || this.isConnected() || this.permanentlyClosed) return;
 
-    return new Promise((resolve, reject) => {
-      try {
-        this.ws = new WebSocket(this.getWebSocketUrl());
+    this.connecting = true;
 
+    try {
+      if (this.ws) {
+        this.close();
+      }
+
+      this.ws = new WebSocket(this.getWebSocketUrl());
+      
+      await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           this.close();
           reject(new Error('Таймаут подключения'));
@@ -40,25 +53,24 @@ export default class WebSocketClient {
         this.ws.onopen = () => {
           clearTimeout(timeout);
           this.connected = true;
+          this.connecting = false;
+          this.reconnectAttempts = 0;
           this.bindEvents();
-          resolve(true);
+          resolve();
         };
 
         this.ws.onerror = (error) => {
           clearTimeout(timeout);
           this.connected = false;
-          reject(error);
+          this.connecting = false;
+          console.error('WebSocket connection error:', error);
+          reject(new Error('Ошибка подключения к серверу'));
         };
-
-        this.ws.onclose = () => {
-          clearTimeout(timeout);
-          this.connected = false;
-          reject(new Error('Соединение закрыто'));
-        };
-      } catch (error) {
-        reject(error);
-      }
-    });
+      });
+    } catch (error) {
+      this.connecting = false;
+      throw error;
+    }
   }
 
   waitForConnection() {
@@ -100,7 +112,6 @@ export default class WebSocketClient {
 
   bindEvents() {
     if (!this.ws) return;
-
     this.ws.onmessage = this.handleMessage.bind(this);
     this.ws.onclose = this.handleClose.bind(this);
     this.ws.onerror = this.handleError.bind(this);
@@ -118,8 +129,16 @@ export default class WebSocketClient {
 
   handleClose(event) {
     this.connected = false;
-    if (event.code !== 1000) {
-      console.log('WebSocket закрыт с кодом:', event.code);
+    this.connecting = false;
+
+    if (event.code === SETTINGS.CLOSE_CODES.NORMAL || 
+        event.code === SETTINGS.CLOSE_CODES.GOING_AWAY) {
+      console.log('WebSocket закрыт корректно');
+      return;
+    }
+
+    if (!this.permanentlyClosed) {
+      console.log(`WebSocket закрыт с кодом: ${event.code}`);
       this.reconnect();
     }
   }
@@ -181,7 +200,18 @@ export default class WebSocketClient {
   }
 
   async reconnect() {
-    this.close();
+    if (this.reconnectAttempts >= SETTINGS.RECONNECT.MAX_ATTEMPTS) {
+      console.log('Достигнут лимит попыток переподключения');
+      return;
+    }
+
+    this.reconnectAttempts++;
+    const delay = Math.min(
+      SETTINGS.RECONNECT.BASE_DELAY * Math.pow(2, this.reconnectAttempts),
+      SETTINGS.RECONNECT.MAX_DELAY
+    );
+
+    await new Promise(resolve => setTimeout(resolve, delay));
     await this.connect();
   }
 
@@ -192,8 +222,11 @@ export default class WebSocketClient {
   close() {
     if (this.ws) {
       this.connected = false;
+      this.connecting = false;
+      this.permanentlyClosed = true;
+      
       try {
-        this.ws.close(1000); // Normal closure
+        this.ws.close(SETTINGS.CLOSE_CODES.NORMAL);
       } catch (error) {
         console.error('Ошибка закрытия WebSocket:', error);
       }
