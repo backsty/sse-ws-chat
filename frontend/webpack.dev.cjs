@@ -1,9 +1,9 @@
-process.env.NODE_ENV = 'development';
-
 const path = require('path');
 const { merge } = require('webpack-merge');
 const webpack = require('webpack');
 const baseConfig = require('./webpack.config.cjs');
+
+process.env.NODE_ENV = 'development';
 
 module.exports = merge(baseConfig, {
   mode: 'development',
@@ -16,13 +16,21 @@ module.exports = merge(baseConfig, {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization",
-      'Content-Security-Policy': "default-src 'self' http://localhost:3000; connect-src 'self' ws://localhost:3000 http://localhost:3000; worker-src 'self' blob: 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;"
+      "Content-Security-Policy": [
+        "default-src 'self' http://localhost:3000",
+        "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
+        "style-src 'self' 'unsafe-inline'",
+        "worker-src 'self' blob:",
+        "connect-src 'self' ws://localhost:3000 http://localhost:3000",
+        "img-src 'self' data: blob:",
+        "font-src 'self' data:",
+        "frame-src 'self'"
+      ].join('; ')
     },
     proxy: [{
-      context: ['/ws'],
+      context: ['/socket.io'],
       target: 'http://localhost:3000',
       ws: true,
-      secure: false,
       changeOrigin: true
     }],
     compress: true,
@@ -30,6 +38,7 @@ module.exports = merge(baseConfig, {
     open: true,
     hot: true,
     historyApiFallback: true,
+    webSocketServer: 'ws'
   },
-  plugins: [new webpack.HotModuleReplacementPlugin()],
+  plugins: [new webpack.HotModuleReplacementPlugin(),],
 });

@@ -8,35 +8,39 @@ branches:
 
 cache:
   - node_modules
-  - .yarn-cache
+  - ~/.yarn-cache
 
 environment:
   GITHUB_TOKEN:
     secure: YOUR_ENCRYPTED_TOKEN
   RENDER_TOKEN:
     secure: YOUR_RENDER_TOKEN
-  NODE_ENV:
-    value: production
-  ASSET_PATH:
-    value: '/sse-ws-chat/'
+  NODE_ENV: production
+  ASSET_PATH: '/sse-ws-chat/'
 
 install:
   - yarn install --frozen-lockfile
+  - yarn workspace @sse-ws-chat/backend install --frozen-lockfile
+  - yarn workspace @sse-ws-chat/frontend install --frozen-lockfile
 
 build_script:
   - yarn build
 
 test_script:
-  - yarn lint
+  - yarn format:check
 
 deploy_script:
-  - git config --global user.name AppVeyor
-  - git config --global user.email ci@appveyor.com
+  - git config --global user.name "AppVeyor"
+  - git config --global user.email "ci@appveyor.com"
+  - echo "https://$GITHUB_TOKEN@github.com" > ~/.git-credentials
   - git config --global credential.helper store
-  - echo "https://$GITHUB_TOKEN:x-oauth-basic@github.com" > "$HOME/.git-credentials"
-  - yarn deploy
+  - yarn workspace @sse-ws-chat/frontend deploy
 
-  - git push https://api.render.com/deploy/srv-YOUR-RENDER-SERVICE-ID?key=$RENDER_TOKEN main
+  - cd backend
+  - git init
+  - git add .
+  - git commit -m "Deploy to Render"
+  - git push --force "https://api.render.com/deploy/srv-YOUR-RENDER-SERVICE-ID?key=$RENDER_TOKEN" main
 
 notifications:
   - provider: Email

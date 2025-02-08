@@ -1,55 +1,51 @@
 {
-  "name": "frontend-sse-ws-chat",
+  "name": "@sse-ws-chat/frontend",
   "version": "1.0.0",
   "description": "frontend-sse-ws-chat",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/backsty/sse-ws-chat/frontend/"
-  },
   "main": "./src/index.js",
   "private": true,
   "scripts": {
-    "start": "webpack serve --config webpack.dev.cjs --mode development",
+    "start": "cross-env NODE_ENV=production webpack serve --config webpack.prod.cjs",
+    "dev": "cross-env NODE_ENV=development webpack serve --config webpack.dev.cjs",
     "build": "cross-env NODE_ENV=production webpack --config webpack.prod.cjs",
-    "watch": "webpack --watch --config webpack.dev.cjs --mode development",
-    "server:dev": "nodemon --exec node --require @babel/register src/backend/server.js",
-    "server:prod": "cross-env NODE_ENV=production node src/backend/server.js",
-    "dev": "concurrently \"yarn server:dev\" \"yarn start\"",
-    "lint": "prettier --check \"src/**/*.{js,css,html,json}\"",
-    "format": "prettier --write \"src/**/*.{js,css,html,json}\"",
-    "predeploy": "yarn format && yarn build",
-    "deploy": "gh-pages -d dist",
-    "clean": "rimraf dist",
-    "prebuild": "yarn clean"
+    "lint": "prettier --check \"src/**/*.{js,css,json}\"",
+    "format": "prettier --write \"src/**/*.{js,css,json}\"",
+    "clean": "rimraf dist node_modules",
+    "deploy": "gh-pages -d dist"
   },
   "keywords": [],
   "author": "backsty",
   "license": "MIT",
+  "dependencies": {
+    "core-js": "^3.40.0"
+  },
   "devDependencies": {
-    "@babel/core": "^7.26.0",
-    "@babel/preset-env": "^7.26.0",
+    "@babel/core": "^7.26.8",
+    "@babel/preset-env": "^7.26.8",
+    "@babel/cli": "^7.26.4",
+    "@babel/node": "^7.26.0",
+    "@babel/runtime": "^7.26.7",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0",
+    "webpack-merge": "^6.0.1",
     "babel-loader": "^9.2.1",
     "clean-webpack-plugin": "^4.0.0",
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.0",
+    "style-loader": "^4.0.0",
     "html-loader": "^5.1.0",
     "html-webpack-plugin": "^5.6.3",
     "mini-css-extract-plugin": "^2.9.2",
-    "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.11",
-    "webpack": "^5.97.1",
-    "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.2.0",
-    "webpack-merge": "^6.0.1",
-    "file-loader": "^6.2.0",
+    "gh-pages": "^6.3.0",
     "url-loader": "^4.1.1",
-    "copy-webpack-plugin": "^12.0.2"
-  },
-  "dependencies": {
-    "@babel/runtime": "^7.26.7",
-    "core-js": "^3.40.0",
-    "date-fns": "^4.1.0"
-  },
-  "homepage": "https://backsty.github.io/sse-ws-chat/frontend/"
+    "cross-env": "^7.0.3",
+    "rimraf": "^6.0.1",
+    "uuid": "^11.0.5",
+    "date-fns": "^4.1.0",
+    "dotenv-webpack": "^8.0.1",
+    "prettier": "^3.4.2"
+  }
 }

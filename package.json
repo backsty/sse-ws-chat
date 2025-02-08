@@ -1,35 +1,27 @@
 {
-    "name": "sse-ws-chat",
-    "version": "1.0.0",
-    "private": true,
-    "scripts": {
-        "install:all": "concurrently \"cd backend && yarn install\" \"cd frontend && yarn install\"",
-        "start:backend": "cd backend && yarn dev",
-        "start:frontend": "cd frontend && yarn start",
-        "start": "concurrently \"yarn start:backend\" \"yarn start:frontend\"",
-        "format": "concurrently \"cd backend && yarn format\" \"cd frontend && yarn format\"",
-        "build": "cd frontend && yarn build",
-        "deploy": "cd frontend && yarn deploy",
-        "clean": "concurrently \"cd backend && yarn clean\" \"cd frontend && yarn clean\""
-    },
-    "devDependencies": {
-        "concurrently": "^8.2.2",
-        "gh-pages": "^6.3.0",
-        "rimraf": "^6.0.1",
-        "cross-env": "^7.0.3",
-        "@babel/cli": "^7.26.4",
-        "@babel/node": "^7.26.0",
-        "@babel/plugin-transform-runtime": "^7.25.9",
-        "@babel/runtime": "^7.26.7",
-        "prettier": "^3.4.2"
-    },
-    "workspaces": {
-        "packages": [
-            "frontend",
-            "backend"
-        ],
-        "nohoist": ["**"]
-    },
-    "author": "backsty",
-    "license": "MIT"
+  "name": "sse-ws-chat",
+  "version": "1.0.0",
+  "author": "backsty",
+  "license": "MIT",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "frontend",
+      "backend"
+    ]
+  },
+  "scripts": {
+    "postinstall": "yarn workspaces run install",
+    "dev": "concurrently \"cd backend && yarn dev\" \"cd frontend && yarn dev\"",
+    "start": "concurrently \"cd backend && yarn start\" \"cd frontend && yarn start\"",
+    "build": "concurrently \"cd backend && yarn build\" \"cd frontend && yarn build\"",
+    "clean": "concurrently \"cd backend && yarn clean\" \"cd frontend && yarn clean\"",
+    "format": "prettier --write \"**/*.{js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,json,css,md}\"",
+    "start:backend": "yarn workspace backend start",
+    "start:frontend": "yarn workspace frontend start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
 }

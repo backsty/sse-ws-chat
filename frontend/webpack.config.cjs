@@ -4,7 +4,7 @@ const HtmlWebPackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = process.env.NODE_ENV !== 'production';
 const ASSET_PATH = isDevelopment ? '/' : '/sse-ws-chat/';
 
 module.exports = {
@@ -19,7 +19,9 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.jsx', '.json'],
     fallback: {
-      "ws": false
+      "ws": false,
+      "path": false,
+      "crypto": false
     }
   },
   module: {
@@ -37,7 +39,10 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: [MiniCssExtractPlugin.loader, 'css-loader'],
+        use: [
+          isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader,
+          'css-loader'
+        ]
       },
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/i,
@@ -50,18 +55,7 @@ module.exports = {
         test: /\.(png|svg|jpg|jpeg|gif|ico)$/i,
         type: 'asset/resource',
         generator: {
-          filename: 'img/[name][ext]'
-        }
-      },
-      {
-        test: /\.worker\.js$/,
-        use: {
-          loader: 'worker-loader',
-          options: {
-            filename: 'workers/[name].[contenthash].js',
-            publicPath: '/',
-            inline: 'no-fallback'
-          }
+          filename: 'asset/img/[name][ext]'
         }
       }
     ],
@@ -76,19 +70,27 @@ module.exports = {
       minify: {
         removeComments: true,
         collapseWhitespace: true,
+        removeRedundantAttributes: true,
+        useShortDoctype: true,
+        removeEmptyAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        keepClosingSlash: true,
+        minifyJS: true,
+        minifyCSS: true,
+        minifyURLs: true
       }
     }),
     new MiniCssExtractPlugin({
-      filename: 'css/[name].[contenthash].css',
-      chunkFilename: 'css/[id].[contenthash].css',
+      filename: isDevelopment ? '[name].css' : 'css/[name].[contenthash].css',
+      chunkFilename: isDevelopment ? '[id].css' : 'css/[id].[contenthash].css'
     }),
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      'process.env.WS_URL': JSON.stringify(
-        process.env.NODE_ENV === 'production'
-          ? 'wss://sse-ws-chat.onrender.com:10001/ws'
-          : 'ws://localhost:3000/ws'
+      'process.env.ASSET_PATH': JSON.stringify(ASSET_PATH),
+      'process.env.SOCKET_URL': JSON.stringify(
+        isDevelopment 
+          ? 'http://localhost:3000' 
+          : 'https://sse-ws-chat.onrender.com'
       )
-    }),
-  ],
+    })
+  ]
 };
