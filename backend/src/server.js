@@ -15,8 +15,8 @@ const __dirname = dirname(__filename);
 dotenv.config();
 
 const isDev = process.env.NODE_ENV !== 'production';
-const port = process.env.PORT || 7070;
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:8080';
+const port = process.env.PORT || 3000;
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:9000';
 const PING_INTERVAL = 30000;
 const PING_TIMEOUT = 5000;
 

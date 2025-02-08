@@ -16,17 +16,17 @@ module.exports = merge(baseConfig, {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization",
-      'Content-Security-Policy': "default-src 'self' http://localhost:7070; connect-src 'self' ws://localhost:7070 http://localhost:7070; worker-src 'self' blob: 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;"
+      'Content-Security-Policy': "default-src 'self' http://localhost:3000; connect-src 'self' ws://localhost:3000 http://localhost:3000; worker-src 'self' blob: 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;"
     },
     proxy: [{
       context: ['/ws'],
-      target: 'http://localhost:7070',
+      target: 'http://localhost:3000',
       ws: true,
       secure: false,
       changeOrigin: true
     }],
     compress: true,
-    port: 8080,
+    port: 9000,
     open: true,
     hot: true,
     historyApiFallback: true,

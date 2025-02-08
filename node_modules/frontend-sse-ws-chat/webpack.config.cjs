@@ -86,8 +86,8 @@ module.exports = {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       'process.env.WS_URL': JSON.stringify(
         process.env.NODE_ENV === 'production'
-          ? 'wss://sse-ws-chat.onrender.com/ws'
-          : 'ws://localhost:7070/ws'
+          ? 'wss://sse-ws-chat.onrender.com:10001/ws'
+          : 'ws://localhost:3000/ws'
       )
     }),
   ],

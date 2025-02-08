@@ -24,12 +24,12 @@ export default class Chat {
     if (this.initialized) return;
 
     try {
-      if (!this.nickname || !this.validateNickname(this.nickname).valid) {
+      if (!hasCookie(COOKIE_SETTINGS.nickname) || !this.validateNickname(this.nickname).valid) {
         this.nickname = await this.promptNickname();
         if (!this.nickname) return;
 
-        setCookie('nickname', this.nickname);
-        setCookie('sessionId', this.sessionId);
+        setCookie(COOKIE_SETTINGS.nickname, this.nickname);
+        setCookie(COOKIE_SETTINGS.sessionId, this.sessionId);
       }
 
       await this.initWebSocket();
@@ -201,7 +201,7 @@ export default class Chat {
     // Удаляем обработчики событий
     window.removeEventListener('online', this.handleOnline);
     window.removeEventListener('offline', this.handleOffline);
-    
+
     this.cleanup();
     this.initialized = false;
     this.authorized = false;
