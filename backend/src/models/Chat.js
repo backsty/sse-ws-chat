@@ -1,19 +1,19 @@
-import { v4 as uuidv4 } from 'uuid';
-import { Message } from './Message.js';
+import { v4 as uuidv4 } from "uuid";
+import { Message } from "./Message.js";
 
 export class Chat {
   static SYNC_STATUSES = {
-    SYNCED: 'synced',
-    PENDING: 'pending',
-    FAILED: 'failed'
+    SYNCED: "synced",
+    PENDING: "pending",
+    FAILED: "failed",
   };
 
   static deserialize(data) {
     const chat = new Chat(data.participants);
     Object.assign(chat, {
       ...data,
-      messages: data.messages.map(m => Message.deserialize(m)),
-      participants: new Set(data.participants)
+      messages: data.messages.map((m) => Message.deserialize(m)),
+      participants: new Set(data.participants),
     });
     return chat;
   }
@@ -25,7 +25,7 @@ export class Chat {
     this.created = Date.now();
     this.lastActivity = Date.now();
     this.unreadCount = 0;
-    this.type = 'private'; // private | group
+    this.type = "private"; // private | group
     this.syncStatus = Chat.SYNC_STATUSES.SYNCED;
     this.lastSyncTime = Date.now();
   }
@@ -56,7 +56,7 @@ export class Chat {
   cleanInactiveUsers() {
     const now = Date.now();
     this.users.forEach((user, userId) => {
-      if (!user.isConnected() && (now - user.lastActivity > 60000)) {
+      if (!user.isConnected() && now - user.lastActivity > 60000) {
         this.removeUser(userId);
       }
     });
@@ -64,8 +64,8 @@ export class Chat {
 
   // Методы сообщений
   addMessage(message) {
-    if (!this.participants.has(message.from) && message.type !== 'system') {
-      throw new Error('Отправитель не является участником чата');
+    if (!this.participants.has(message.from) && message.type !== "system") {
+      throw new Error("Отправитель не является участником чата");
     }
 
     this.messages.push(message);
@@ -84,9 +84,9 @@ export class Chat {
 
   // Методы статусов
   markAsRead(userId) {
-    this.messages.forEach(msg => {
-      if (msg.from !== userId && msg.status !== 'read') {
-        msg.status = 'read';
+    this.messages.forEach((msg) => {
+      if (msg.from !== userId && msg.status !== "read") {
+        msg.status = "read";
       }
     });
     this.unreadCount = 0;
@@ -98,7 +98,7 @@ export class Chat {
 
   setSyncStatus(status) {
     if (!Object.values(Chat.SYNC_STATUSES).includes(status)) {
-      throw new Error('Неверный статус синхронизации');
+      throw new Error("Неверный статус синхронизации");
     }
     this.syncStatus = status;
     this.lastSyncTime = Date.now();
@@ -106,7 +106,7 @@ export class Chat {
 
   // Методы коммуникации
   broadcast(message, exceptUserId = null) {
-    this.participants.forEach(userId => {
+    this.participants.forEach((userId) => {
       if (userId !== exceptUserId) {
         // Этот метод должен быть реализован в UserManager
         this.userManager?.sendToUser(userId, message);
@@ -119,12 +119,12 @@ export class Chat {
     return {
       id: this.id,
       participants: Array.from(this.participants),
-      messages: this.messages.map(m => m.toJSON()),
+      messages: this.messages.map((m) => m.toJSON()),
       created: this.created,
       lastActivity: this.lastActivity,
       unreadCount: this.unreadCount,
       syncStatus: this.syncStatus,
-      lastSyncTime: this.lastSyncTime
+      lastSyncTime: this.lastSyncTime,
     };
   }
 

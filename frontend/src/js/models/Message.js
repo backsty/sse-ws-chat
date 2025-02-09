@@ -4,7 +4,7 @@ export class Message {
   static TYPES = {
     TEXT: 'message',
     SYSTEM: 'system',
-    STATUS: 'status'
+    STATUS: 'status',
   };
 
   static STATUSES = {
@@ -12,20 +12,29 @@ export class Message {
     SENT: 'sent',
     DELIVERED: 'delivered',
     READ: 'read',
-    ERROR: 'error'
+    ERROR: 'error',
   };
 
-  constructor({ id, from, text, type = Message.TYPES.TEXT, timestamp, status = Message.STATUSES.SENDING }) {
+  constructor({
+    id,
+    from,
+    text,
+    type = Message.TYPES.TEXT,
+    timestamp,
+    status = Message.STATUSES.SENDING,
+  }) {
     if (!text) {
       throw new Error('Текст сообщения обязателен');
     }
-    
+
     this.id = id || crypto.randomUUID();
     this.from = from; // ID отправителя
     this.text = text;
     this.type = Object.values(Message.TYPES).includes(type) ? type : Message.TYPES.TEXT;
     this.timestamp = timestamp || Date.now();
-    this.status = Object.values(Message.STATUSES).includes(status) ? status : Message.STATUSES.SENDING;
+    this.status = Object.values(Message.STATUSES).includes(status)
+      ? status
+      : Message.STATUSES.SENDING;
   }
 
   static fromJSON(data) {
@@ -41,7 +50,7 @@ export class Message {
       from: 'system',
       text,
       type: Message.TYPES.SYSTEM,
-      status: Message.STATUSES.SENT
+      status: Message.STATUSES.SENT,
     });
   }
 
@@ -64,7 +73,7 @@ export class Message {
       text: this.text,
       type: this.type,
       timestamp: this.timestamp,
-      status: this.status
+      status: this.status,
     };
   }
 }

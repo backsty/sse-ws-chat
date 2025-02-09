@@ -4,7 +4,7 @@ export class User {
   static STATUSES = {
     ACTIVE: 'active',
     AWAY: 'away',
-    OFFLINE: 'offline'
+    OFFLINE: 'offline',
   };
 
   constructor({ id, nickname, isOnline = false, lastActivity = Date.now(), avatar, status }) {
@@ -46,7 +46,7 @@ export class User {
       isOnline: this.isOnline,
       lastActivity: this.lastActivity,
       avatar: this.avatar,
-      status: this.status
+      status: this.status,
     };
   }
 }

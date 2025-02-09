@@ -10,7 +10,7 @@ export class UserList {
   createElements() {
     const container = document.createElement('div');
     container.className = 'user-list hidden';
-    
+
     container.innerHTML = `
       <h2 class="chat-header">Пользователи онлайн</h2>
       <div class="users-container"></div>
@@ -38,7 +38,7 @@ export class UserList {
       return;
     }
 
-    usersData.forEach(userData => {
+    usersData.forEach((userData) => {
       const user = userData instanceof User ? userData : new User(userData);
       this.users.set(user.id, user);
       const userElement = document.createElement('div');

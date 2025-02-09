@@ -9,7 +9,7 @@
     "backend"
   ],
   "scripts": {
-    "install:all": "yarn install",
+    "postinstall": "yarn workspaces run install",
     "dev": "concurrently \"yarn workspace @sse-ws-chat/backend dev\" \"yarn workspace @sse-ws-chat/frontend dev\"",
     "start": "concurrently \"yarn workspace @sse-ws-chat/backend start\" \"yarn workspace @sse-ws-chat/frontend start\"",
     "build": "concurrently \"yarn workspace @sse-ws-chat/backend build\" \"yarn workspace @sse-ws-chat/frontend build\"",

@@ -35,7 +35,7 @@ export class ChatWindow {
 
     this.sendButton.addEventListener('click', () => this.handleSend());
     this.input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') this.handleSend();
+      if (e.key === 'Enter') this.handleSend();
     });
 
     return container;
@@ -57,16 +57,13 @@ export class ChatWindow {
     this.currentChat = chat;
     this.currentUser = currentUser;
     this.messagesList.innerHTML = '';
-    
+
     // Получаем другого участника чата
-    const otherUserId = Array.from(chat.participants)
-      .find(id => id !== currentUser.id);
+    const otherUserId = Array.from(chat.participants).find((id) => id !== currentUser.id);
     const otherUser = this.userList?.users.get(otherUserId);
-    
+
     // Обновляем заголовок
-    this.header.textContent = otherUser ? 
-      `Чат с ${otherUser.nickname}` : 
-      'Чат';
+    this.header.textContent = otherUser ? `Чат с ${otherUser.nickname}` : 'Чат';
 
     // Показываем чат и активируем поле ввода
     this.show();
@@ -75,19 +72,22 @@ export class ChatWindow {
     this.input.focus();
 
     // Отображаем существующие сообщения
-    chat.messages.forEach(msg => this.addMessage(msg));
+    chat.messages.forEach((msg) => this.addMessage(msg));
   }
 
   addMessage(messageData) {
     console.log('📝 Добавление сообщения:', messageData);
-    
-    const message = messageData instanceof Message ? messageData : new Message({
-      id: messageData.id,
-      from: messageData.from || this.currentUser.id, // Добавляем отправителя
-      text: messageData.text,
-      timestamp: messageData.timestamp || Date.now(),
-      status: messageData.status
-    });
+
+    const message =
+      messageData instanceof Message
+        ? messageData
+        : new Message({
+            id: messageData.id,
+            from: messageData.from || this.currentUser.id, // Добавляем отправителя
+            text: messageData.text,
+            timestamp: messageData.timestamp || Date.now(),
+            status: messageData.status,
+          });
 
     const messageEl = document.createElement('div');
     const isOwn = message.from === this.currentUser?.id;

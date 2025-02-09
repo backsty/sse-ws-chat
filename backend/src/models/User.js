@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 export class User {
   static deserialize(data) {
@@ -14,7 +14,7 @@ export class User {
     this.isOnline = Boolean(socket);
     this.lastActivity = Date.now();
     this.avatar = null;
-    this.status = 'active';
+    this.status = "active";
   }
 
   updateActivity() {
@@ -27,8 +27,8 @@ export class User {
   }
 
   setStatus(status) {
-    if (!['active', 'away', 'offline'].includes(status)) {
-        throw new Error('Неверный статус пользователя');
+    if (!["active", "away", "offline"].includes(status)) {
+      throw new Error("Неверный статус пользователя");
     }
     this.status = status;
     this.updateActivity();
@@ -59,7 +59,7 @@ export class User {
       isOnline: this.isOnline,
       lastActivity: this.lastActivity,
       avatar: this.avatar,
-      status: this.status
+      status: this.status,
     };
   }
 
@@ -68,4 +68,4 @@ export class User {
     delete data.socket;
     return data;
   }
-};
+}

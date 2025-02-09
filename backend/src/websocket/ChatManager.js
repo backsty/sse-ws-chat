@@ -1,8 +1,8 @@
-import { Chat } from '../models/Chat.js';
-import { Message } from '../models/Message.js';
-import { createLogger } from '../utils/logger.js';
+import { Chat } from "../models/Chat.js";
+import { Message } from "../models/Message.js";
+import { createLogger } from "../utils/logger.js";
 
-const logger = createLogger('ChatManager');
+const logger = createLogger("ChatManager");
 
 export class ChatManager {
   constructor(userManager) {
@@ -11,8 +11,8 @@ export class ChatManager {
   }
 
   createChat(user1Id, user2Id) {
-    const chatId = [user1Id, user2Id].sort().join(':');
-    
+    const chatId = [user1Id, user2Id].sort().join(":");
+
     if (this.chats.has(chatId)) {
       return this.chats.get(chatId);
     }
@@ -29,32 +29,33 @@ export class ChatManager {
   }
 
   getChatByUsers(user1Id, user2Id) {
-    const chatId = [user1Id, user2Id].sort().join(':');
+    const chatId = [user1Id, user2Id].sort().join(":");
     return this.getChat(chatId);
   }
 
   getUserChats(userId) {
-    return Array.from(this.chats.values())
-        .filter(chat => chat.hasParticipant(userId));
+    return Array.from(this.chats.values()).filter((chat) =>
+      chat.hasParticipant(userId),
+    );
   }
 
   addMessage(chatId, fromId, text) {
     const chat = this.chats.get(chatId);
     if (!chat) {
-      throw new Error('Чат не найден');
+      throw new Error("Чат не найден");
     }
 
     const message = new Message(fromId, text);
     chat.addMessage(message);
 
     // Отправляем сообщение всем участникам чата
-    chat.participants.forEach(userId => {
+    chat.participants.forEach((userId) => {
       if (userId !== fromId) {
         const user = this.userManager.getUser(userId);
         user?.send({
-          type: 'message',
+          type: "message",
           chatId,
-          message: message.toJSON()
+          message: message.toJSON(),
         });
       }
     });
@@ -67,4 +68,4 @@ export class ChatManager {
     this.chats.delete(chatId);
     logger.info(`Чат удален: ${chatId}`);
   }
-};
+}

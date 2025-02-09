@@ -15,7 +15,7 @@ export class EventEmitter {
     if (!event || typeof event !== 'string') {
       throw new Error('Некорректное название события');
     }
-    
+
     if (typeof callback !== 'function') {
       throw new Error('Callback должен быть функцией');
     }
@@ -24,7 +24,7 @@ export class EventEmitter {
       this.events.set(event, new Set());
     }
     this.events.get(event).add(callback);
-    
+
     return () => this.off(event, callback);
   }
 
@@ -35,7 +35,7 @@ export class EventEmitter {
     console.error(`Ошибка в обработчике события ${event}:`, {
       error: error.message,
       callback: callback.name || 'anonymous',
-      stack: error.stack
+      stack: error.stack,
     });
   }
 
@@ -69,8 +69,8 @@ export class EventEmitter {
    */
   emit(event, data) {
     if (!this.events.has(event)) return;
-    
-    this.events.get(event).forEach(callback => {
+
+    this.events.get(event).forEach((callback) => {
       try {
         callback(data);
       } catch (error) {

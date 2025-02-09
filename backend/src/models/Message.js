@@ -1,21 +1,21 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 export class Message {
   static TYPES = {
-    MESSAGE: 'message',
-    SYSTEM: 'system',
-    STATUS: 'status'
+    MESSAGE: "message",
+    SYSTEM: "system",
+    STATUS: "status",
   };
 
   static STATUSES = {
-    SENT: 'sent',
-    DELIVERED: 'delivered',
-    READ: 'read',
-    FAILED: 'failed'
+    SENT: "sent",
+    DELIVERED: "delivered",
+    READ: "read",
+    FAILED: "failed",
   };
 
   static system(text) {
-    return new Message('system', text, 'system');
+    return new Message("system", text, "system");
   }
 
   static deserialize(data) {
@@ -26,7 +26,7 @@ export class Message {
 
   constructor(from, text, type = Message.TYPES.MESSAGE) {
     if (!Object.values(Message.TYPES).includes(type)) {
-      throw new Error('Неверный тип сообщения');
+      throw new Error("Неверный тип сообщения");
     }
     this.id = uuidv4();
     this.from = from;
@@ -39,14 +39,14 @@ export class Message {
 
   setStatus(status) {
     if (!Object.values(Message.STATUSES).includes(status)) {
-      throw new Error('Неверный статус сообщения');
+      throw new Error("Неверный статус сообщения");
     }
     this.status = status;
   }
 
   getFormattedTime() {
     const date = new Date(this.timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
   toJSON() {
@@ -58,7 +58,7 @@ export class Message {
       timestamp: this.timestamp,
       status: this.status,
       isOffline: this.isOffline,
-      formattedTime: this.getFormattedTime()
+      formattedTime: this.getFormattedTime(),
     };
   }
 

@@ -5,7 +5,7 @@ export class Chat {
   constructor({ id, participants, messages = [], unreadCount = 0 }) {
     this.id = id || crypto.randomUUID();
     this.participants = new Set(participants);
-    this.messages = messages.map(m => Message.fromJSON(m));
+    this.messages = messages.map((m) => Message.fromJSON(m));
     this.unreadCount = Math.max(0, unreadCount);
     this.lastActivity = this.getLastActivity();
   }
@@ -42,14 +42,15 @@ export class Chat {
     const now = new Date();
     const diff = now - date;
 
-    if (diff < 86400000) { // менее 24 часов
+    if (diff < 86400000) {
+      // менее 24 часов
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
     return date.toLocaleDateString();
   }
 
   markAsRead(userId) {
-    this.messages.forEach(msg => {
+    this.messages.forEach((msg) => {
       if (msg.from !== userId && msg.status !== Message.STATUSES.READ) {
         msg.status = Message.STATUSES.READ;
       }
@@ -69,9 +70,9 @@ export class Chat {
     return {
       id: this.id,
       participants: Array.from(this.participants),
-      messages: this.messages.map(m => m.toJSON()),
+      messages: this.messages.map((m) => m.toJSON()),
       unreadCount: this.unreadCount,
-      lastActivity: this.lastActivity
+      lastActivity: this.lastActivity,
     };
   }
 }

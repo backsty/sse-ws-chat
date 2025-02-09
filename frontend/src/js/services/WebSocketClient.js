@@ -50,12 +50,12 @@ export class WebSocketClient extends EventEmitter {
       try {
         const data = JSON.parse(event.data);
         console.log('📨 Получено сообщение:', data);
-        
+
         // Удаляем сообщение из ожидающих
         if (data.messageId) {
           this.pendingMessages.delete(data.messageId);
         }
-        
+
         this.emit('message', data);
         if (data.type) {
           this.emit(data.type, data);
@@ -76,10 +76,10 @@ export class WebSocketClient extends EventEmitter {
 
     const messageId = crypto.randomUUID();
     const message = { messageId, type, ...data };
-    
+
     console.log('📤 Отправка сообщения:', message);
     this.ws.send(JSON.stringify(message));
-    
+
     // Сохраняем сообщение как ожидающее
     this.addToPending(type, data, messageId);
   }

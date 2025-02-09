@@ -44,7 +44,7 @@ export class ChatService extends EventEmitter {
     // Пользователи
     this.ws.on('userList', (data) => {
       this.users.clear();
-      data.users.forEach(userData => {
+      data.users.forEach((userData) => {
         this.users.set(userData.id, new User(userData));
       });
       this.emit('userListUpdate', Array.from(this.users.values()));
@@ -74,7 +74,7 @@ export class ChatService extends EventEmitter {
 
     this.ws.on('message', (data) => {
       console.log('📨 Получено сообщение:', data);
-      
+
       const chat = this.chats.get(data.chatId);
       if (chat) {
         const message = new Message({
@@ -82,9 +82,9 @@ export class ChatService extends EventEmitter {
           from: data.from,
           text: data.text,
           timestamp: data.timestamp,
-          status: 'delivered'
+          status: 'delivered',
         });
-        
+
         chat.addMessage(message);
         this.emit('newMessage', { chat, message });
       }
@@ -122,7 +122,7 @@ export class ChatService extends EventEmitter {
     if (!chatId || !text?.trim()) {
       throw new Error('Некорректные данные сообщения');
     }
-    
+
     const messageId = crypto.randomUUID();
     const message = new Message({
       id: messageId,
@@ -130,7 +130,7 @@ export class ChatService extends EventEmitter {
       chatId,
       text: text.trim(),
       timestamp: Date.now(),
-      status: 'sending'
+      status: 'sending',
     });
 
     // Добавляем сообщение локально сразу
@@ -142,11 +142,11 @@ export class ChatService extends EventEmitter {
 
     // Отправляем на сервер
     this.pendingMessages.set(messageId, message);
-    this.ws.send('message', { 
-      chatId, 
-      text: text.trim(), 
+    this.ws.send('message', {
+      chatId,
+      text: text.trim(),
       messageId,
-      from: this.currentUser.id 
+      from: this.currentUser.id,
     });
   }
 

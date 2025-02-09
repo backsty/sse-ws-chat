@@ -6,10 +6,11 @@ import { ChatWindow } from './ChatWindow.js';
 
 export class ChatApp {
   constructor() {
-    const wsUrl = process.env.NODE_ENV === 'production'
-      ? 'wss://sse-ws-chat-4ur5.onrender.com/ws'
-      : 'ws://localhost:3000/ws';
-      
+    const wsUrl =
+      process.env.NODE_ENV === 'production'
+        ? 'wss://sse-ws-chat-4ur5.onrender.com/ws'
+        : 'ws://localhost:3000/ws';
+
     console.log('🌐 WebSocket URL:', wsUrl);
 
     this.wsClient = new WebSocketClient(wsUrl);
@@ -60,7 +61,7 @@ export class ChatApp {
       console.log('👥 Обновление списка пользователей:', users);
       if (this.currentUser) {
         // Фильтруем текущего пользователя из списка
-        const filteredUsers = users.filter(u => u.id !== this.currentUser.id);
+        const filteredUsers = users.filter((u) => u.id !== this.currentUser.id);
         this.userList.updateUsers(filteredUsers);
       }
     });
