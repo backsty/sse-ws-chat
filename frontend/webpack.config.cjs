@@ -5,23 +5,26 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
-const ASSET_PATH = isDevelopment ? '/' : '/sse-ws-chat/';
+const basePath = isDevelopment ? '/' : '/sse-ws-chat/';
 
 module.exports = {
   entry: './src/index.js',
   target: 'web',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].[contenthash].js',
-    assetModuleFilename: 'assets/[hash][ext][query]',
-    publicPath: ASSET_PATH,
+    filename: isDevelopment ? '[name].js' : '[name].[contenthash].js',
+    publicPath: basePath,
+    clean: true
   },
   resolve: {
     extensions: ['.js', '.jsx', '.json'],
-    fallback: {
-      "ws": false,
-      "path": false,
-      "crypto": false
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+      '@components': path.resolve(__dirname, 'src/js/components'),
+      '@services': path.resolve(__dirname, 'src/js/services'),
+      '@assets': path.resolve(__dirname, 'src/assets'),
+      '@fonts': path.resolve(__dirname, 'src/assets/fonts'),
+      '@images': path.resolve(__dirname, 'src/assets/img')
     }
   },
   module: {
@@ -39,23 +42,22 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: [
-          isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader,
-          'css-loader'
-        ]
+        use: ['style-loader', 'css-loader']
       },
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/i,
         type: 'asset/resource',
         generator: {
-          filename: 'assets/fonts/[name][ext]'
+          filename: 'assets/fonts/[name][ext]',
+          publicPath: basePath
         }
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif|ico)$/i,
         type: 'asset/resource',
         generator: {
-          filename: 'asset/img/[name][ext]'
+          filename: 'assets/img/[name][ext]',
+          publicPath: basePath
         }
       }
     ],
@@ -67,29 +69,18 @@ module.exports = {
       filename: 'index.html',
       favicon: './src/assets/favicon.ico',
       inject: true,
-      minify: {
-        removeComments: true,
-        collapseWhitespace: true,
-        removeRedundantAttributes: true,
-        useShortDoctype: true,
-        removeEmptyAttributes: true,
-        removeStyleLinkTypeAttributes: true,
-        keepClosingSlash: true,
-        minifyJS: true,
-        minifyCSS: true,
-        minifyURLs: true
-      }
+      publicPath: basePath
     }),
     new MiniCssExtractPlugin({
-      filename: isDevelopment ? '[name].css' : 'css/[name].[contenthash].css',
-      chunkFilename: isDevelopment ? '[id].css' : 'css/[id].[contenthash].css'
+      filename: 'css/[name].[contenthash].css',
+      chunkFilename: 'css/[id].[contenthash].css'
     }),
     new webpack.DefinePlugin({
-      'process.env.ASSET_PATH': JSON.stringify(ASSET_PATH),
-      'process.env.SOCKET_URL': JSON.stringify(
+      'process.env.ASSET_PATH': JSON.stringify(basePath),
+      'process.env.WS_URL': JSON.stringify(
         isDevelopment 
-          ? 'http://localhost:3000' 
-          : 'https://sse-ws-chat.onrender.com'
+          ? 'ws://localhost:3000'
+          : 'wss://sse-ws-chat-4ur5.onrender.com'
       )
     })
   ]

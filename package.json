@@ -4,22 +4,20 @@
   "author": "backsty",
   "license": "MIT",
   "private": true,
-  "workspaces": {
-    "packages": [
-      "frontend",
-      "backend"
-    ]
-  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "postinstall": "yarn workspaces run install",
-    "dev": "concurrently \"cd backend && yarn dev\" \"cd frontend && yarn dev\"",
-    "start": "concurrently \"cd backend && yarn start\" \"cd frontend && yarn start\"",
-    "build": "concurrently \"cd backend && yarn build\" \"cd frontend && yarn build\"",
-    "clean": "concurrently \"cd backend && yarn clean\" \"cd frontend && yarn clean\"",
+    "install:all": "yarn install",
+    "dev": "concurrently \"yarn workspace @sse-ws-chat/backend dev\" \"yarn workspace @sse-ws-chat/frontend dev\"",
+    "start": "concurrently \"yarn workspace @sse-ws-chat/backend start\" \"yarn workspace @sse-ws-chat/frontend start\"",
+    "build": "concurrently \"yarn workspace @sse-ws-chat/backend build\" \"yarn workspace @sse-ws-chat/frontend build\"",
+    "clean": "concurrently \"yarn workspace @sse-ws-chat/backend clean\" \"yarn workspace @sse-ws-chat/frontend clean\"",
     "format": "prettier --write \"**/*.{js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,json,css,md}\"",
-    "start:backend": "yarn workspace backend start",
-    "start:frontend": "yarn workspace frontend start"
+    "start:backend": "yarn workspace @sse-ws-chat/backend start",
+    "start:frontend": "yarn workspace @sse-ws-chat/frontend start"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

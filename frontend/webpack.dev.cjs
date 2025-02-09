@@ -21,18 +21,12 @@ module.exports = merge(baseConfig, {
         "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
         "style-src 'self' 'unsafe-inline'",
         "worker-src 'self' blob:",
-        "connect-src 'self' ws://localhost:3000 http://localhost:3000",
-        "img-src 'self' data: blob:",
+        "connect-src 'self' ws://localhost:3000 http://localhost:3000 wss://sse-ws-chat-4ur5.onrender.com",
+        "img-src 'self' data: blob: https://api.dicebear.com",
         "font-src 'self' data:",
         "frame-src 'self'"
       ].join('; ')
     },
-    proxy: [{
-      context: ['/socket.io'],
-      target: 'http://localhost:3000',
-      ws: true,
-      changeOrigin: true
-    }],
     compress: true,
     port: 9000,
     open: true,
@@ -40,5 +34,5 @@ module.exports = merge(baseConfig, {
     historyApiFallback: true,
     webSocketServer: 'ws'
   },
-  plugins: [new webpack.HotModuleReplacementPlugin(),],
+  plugins: [new webpack.HotModuleReplacementPlugin()],
 });
