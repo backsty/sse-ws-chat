@@ -27,6 +27,14 @@ jobs:
         env:
           CI: true
 
+      - name: Format Code
+        working-directory: backend
+        run: yarn format
+        
+      - name: Check Formatting
+        working-directory: backend
+        run: yarn lint
+
       - name: Deploy to Render
         uses: johnbeynon/render-deploy-action@v0.0.8
         with:
