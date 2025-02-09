@@ -1,3 +1,5 @@
+import { formatTime } from '../utils/date.js';
+
 export class Message {
   static TYPES = {
     TEXT: 'message',
@@ -14,35 +16,45 @@ export class Message {
   };
 
   constructor({ id, from, text, type = Message.TYPES.TEXT, timestamp, status = Message.STATUSES.SENDING }) {
-    this.id = id;
-    this.from = from;
+    if (!text) {
+      throw new Error('Текст сообщения обязателен');
+    }
+    
+    this.id = id || crypto.randomUUID();
+    this.from = from; // ID отправителя
     this.text = text;
-    this.type = type;
+    this.type = Object.values(Message.TYPES).includes(type) ? type : Message.TYPES.TEXT;
     this.timestamp = timestamp || Date.now();
-    this.status = status;
+    this.status = Object.values(Message.STATUSES).includes(status) ? status : Message.STATUSES.SENDING;
   }
 
   static fromJSON(data) {
+    if (!data?.text) {
+      throw new Error('Некорректные данные сообщения');
+    }
     return new Message(data);
   }
 
   static system(text) {
     return new Message({
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       from: 'system',
       text,
-      type: Message.TYPES.SYSTEM
+      type: Message.TYPES.SYSTEM,
+      status: Message.STATUSES.SENT
     });
   }
 
   getFormattedTime() {
-    const date = new Date(this.timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return formatTime(this.timestamp);
   }
 
-  getFormattedDate() {
-    const date = new Date(this.timestamp);
-    return date.toLocaleDateString();
+  isSystem() {
+    return this.type === Message.TYPES.SYSTEM;
+  }
+
+  isError() {
+    return this.status === Message.STATUSES.ERROR;
   }
 
   toJSON() {

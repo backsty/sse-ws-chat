@@ -4,20 +4,34 @@ import '../css/components/chat.css';
 import '../css/components/users.css';
 import '../css/components/modal.css';
 
-// Ждем полной загрузки DOM
-document.addEventListener('DOMContentLoaded', () => {
-  // Инициализация приложения
-  const app = new ChatApp();
+let app = null;
 
-  // Обработка ошибок в глобальном скопе
-  window.addEventListener('unhandledrejection', (event) => {
-    console.error('Необработанная ошибка:', event.reason);
-  });
+const startApp = () => {
+  const loader = document.getElementById('loader');
+  try {
+    app = new ChatApp();
+    loader.classList.add('hidden');
+  } catch (error) {
+    console.error('Ошибка инициализации приложения:', error);
+    loader.innerHTML = `
+      <div class="error-message">
+        Произошла ошибка при загрузке приложения. Попробуйте обновить страницу.
+      </div>
+    `;
+  }
+};
 
-  // Обработка закрытия вкладки
-  window.addEventListener('beforeunload', () => {
-    if (app.chatService) {
-      app.chatService.disconnect();
-    }
-  });
+// Инициализация приложения после загрузки DOM
+document.addEventListener('DOMContentLoaded', startApp);
+
+// Обработка необработанных ошибок
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Необработанная ошибка:', event.reason);
+});
+
+// Обработка закрытия вкладки
+window.addEventListener('beforeunload', () => {
+  if (app?.chatService) {
+    app.chatService.disconnect();
+  }
 });

@@ -3,11 +3,13 @@ import { EventEmitter } from '../utils/events.js';
 export class WebSocketClient extends EventEmitter {
   constructor(url) {
     super();
-    this.url = url;
+    this.url = url.endsWith('/ws') ? url : `${url}/ws`;
     this.isConnected = false;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectTimeout = 1000;
+    this.pendingMessages = new Map();
+
     console.log('🔌 Инициализация WebSocket:', this.url);
     this.connect();
   }
@@ -29,6 +31,7 @@ export class WebSocketClient extends EventEmitter {
       this.isConnected = true;
       this.reconnectAttempts = 0;
       this.emit('connect');
+      this.resendPendingMessages();
     };
 
     this.ws.onclose = () => {
@@ -47,6 +50,12 @@ export class WebSocketClient extends EventEmitter {
       try {
         const data = JSON.parse(event.data);
         console.log('📨 Получено сообщение:', data);
+        
+        // Удаляем сообщение из ожидающих
+        if (data.messageId) {
+          this.pendingMessages.delete(data.messageId);
+        }
+        
         this.emit('message', data);
         if (data.type) {
           this.emit(data.type, data);
@@ -61,10 +70,28 @@ export class WebSocketClient extends EventEmitter {
   send(type, data = {}) {
     if (!this.isConnected) {
       console.error('❌ Попытка отправки без подключения');
-      throw new Error('WebSocket не подключен');
+      this.addToPending(type, data);
+      return;
     }
-    console.log('📤 Отправка сообщения:', { type, ...data });
-    this.ws.send(JSON.stringify({ type, ...data }));
+
+    const messageId = crypto.randomUUID();
+    const message = { messageId, type, ...data };
+    
+    console.log('📤 Отправка сообщения:', message);
+    this.ws.send(JSON.stringify(message));
+    
+    // Сохраняем сообщение как ожидающее
+    this.addToPending(type, data, messageId);
+  }
+
+  addToPending(type, data, messageId = crypto.randomUUID()) {
+    this.pendingMessages.set(messageId, { type, data, timestamp: Date.now() });
+  }
+
+  resendPendingMessages() {
+    for (const [messageId, message] of this.pendingMessages) {
+      this.send(message.type, message.data);
+    }
   }
 
   reconnect() {
@@ -80,7 +107,7 @@ export class WebSocketClient extends EventEmitter {
   }
 
   disconnect() {
-    if (this.ws) {
+    if (this.ws && this.isConnected) {
       this.ws.close();
     }
   }

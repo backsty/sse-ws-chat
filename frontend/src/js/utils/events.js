@@ -1,6 +1,7 @@
 export class EventEmitter {
   constructor() {
     this.events = new Map();
+    this._handleError = this._handleError.bind(this);
   }
 
   /**
@@ -8,15 +9,34 @@ export class EventEmitter {
    * @param {string} event - Название события
    * @param {Function} callback - Функция-обработчик
    * @returns {Function} - Функция для отписки
+   * @throws {Error} При некорректных параметрах
    */
   on(event, callback) {
+    if (!event || typeof event !== 'string') {
+      throw new Error('Некорректное название события');
+    }
+    
+    if (typeof callback !== 'function') {
+      throw new Error('Callback должен быть функцией');
+    }
+
     if (!this.events.has(event)) {
       this.events.set(event, new Set());
     }
     this.events.get(event).add(callback);
     
-    // Возвращаем функцию для удобного удаления слушателя
     return () => this.off(event, callback);
+  }
+
+  /**
+   * Обработка ошибок в колбэках
+   */
+  _handleError(event, error, callback) {
+    console.error(`Ошибка в обработчике события ${event}:`, {
+      error: error.message,
+      callback: callback.name || 'anonymous',
+      stack: error.stack
+    });
   }
 
   /**
@@ -44,14 +64,17 @@ export class EventEmitter {
 
   /**
    * Генерация события
+   * @param {string} event - Название события
+   * @param {*} data - Данные события
    */
   emit(event, data) {
     if (!this.events.has(event)) return;
+    
     this.events.get(event).forEach(callback => {
       try {
         callback(data);
       } catch (error) {
-        console.error(`Ошибка в обработчике события ${event}:`, error);
+        this._handleError(event, error, callback);
       }
     });
   }

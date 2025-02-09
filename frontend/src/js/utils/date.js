@@ -1,24 +1,46 @@
 /**
- * Форматирование даты в локальный формат
+ * Форматы отображения дат
  */
-export const formatDate = (timestamp) => {
-  const date = new Date(timestamp);
-  return new Intl.DateTimeFormat('ru-RU', { 
+const DATE_FORMATS = {
+  date: { 
     day: '2-digit',
     month: '2-digit',
     year: 'numeric' 
-  }).format(date);
+  },
+  time: { 
+    hour: '2-digit',
+    minute: '2-digit'
+  }
+};
+
+/**
+ * Форматирование даты в локальный формат
+ * @param {number} timestamp - Unix timestamp
+ * @returns {string} Отформатированная дата
+ */
+export const formatDate = (timestamp) => {
+  if (!timestamp || isNaN(timestamp)) {
+    console.warn('❌ Некорректный timestamp:', timestamp);
+    return '';
+  }
+  
+  const date = new Date(timestamp);
+  return new Intl.DateTimeFormat('ru-RU', DATE_FORMATS.date).format(date);
 };
 
 /**
  * Форматирование времени в формат ЧЧ:ММ
+ * @param {number} timestamp - Unix timestamp
+ * @returns {string} Отформатированное время
  */
 export const formatTime = (timestamp) => {
+  if (!timestamp || isNaN(timestamp)) {
+    console.warn('❌ Некорректный timestamp:', timestamp);
+    return '';
+  }
+  
   const date = new Date(timestamp);
-  return new Intl.DateTimeFormat('ru-RU', { 
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
+  return new Intl.DateTimeFormat('ru-RU', DATE_FORMATS.time).format(date);
 };
 
 /**

@@ -1,60 +1,54 @@
 export class LoginModal {
   constructor(onLogin) {
     this.onLogin = onLogin;
-    this.init();
+    this.element = this.createElements();
   }
 
-  init() {
-    this.container = document.createElement('div');
-    this.container.className = 'login-modal hidden';
+  createElements() {
+    const modal = document.createElement('div');
+    modal.className = 'login-modal hidden';
 
-    this.modal = document.createElement('div');
-    this.modal.className = 'modal-content';
-
-    this.modal.innerHTML = `
-      <h2>Вход в чат</h2>
-      <input type="text" placeholder="Введите никнейм" class="nickname-input">
-      <div class="error-message hidden"></div>
-      <button class="login-button">Войти</button>
+    modal.innerHTML = `
+      <div class="login-content">
+        <h2>Введите имя</h2>
+        <div class="error-message hidden"></div>
+        <input type="text" placeholder="Ваше имя..." maxlength="50">
+        <button>Войти</button>
+      </div>
     `;
 
-    this.container.appendChild(this.modal);
-    document.body.appendChild(this.container);
+    const input = modal.querySelector('input');
+    const button = modal.querySelector('button');
+    this.errorElement = modal.querySelector('.error-message');
 
-    this.input = this.modal.querySelector('.nickname-input');
-    this.errorMessage = this.modal.querySelector('.error-message');
-    this.loginButton = this.modal.querySelector('.login-button');
-
-    this.bindEvents();
-  }
-
-  bindEvents() {
-    this.loginButton.addEventListener('click', () => this.handleLogin());
-    this.input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') this.handleLogin();
+    button.addEventListener('click', () => this.handleLogin(input.value));
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.handleLogin(input.value);
     });
+
+    return modal;
   }
 
-  handleLogin() {
-    const nickname = this.input.value.trim();
-    if (nickname && this.onLogin) {
-      this.onLogin(nickname);
+  handleLogin(nickname) {
+    nickname = nickname.trim();
+    if (nickname.length < 2) {
+      this.showError('Имя должно содержать минимум 2 символа');
+      return;
     }
+    this.onLogin(nickname);
   }
 
   showError(message) {
-    this.errorMessage.textContent = message;
-    this.errorMessage.classList.remove('hidden');
+    this.errorElement.textContent = message;
+    this.errorElement.classList.remove('hidden');
   }
 
   show() {
-    this.container.classList.remove('hidden');
-    this.input.focus();
+    this.element.classList.remove('hidden');
+    this.element.querySelector('input').focus();
   }
 
   hide() {
-    this.container.classList.add('hidden');
-    this.input.value = '';
-    this.errorMessage.classList.add('hidden');
+    this.element.classList.add('hidden');
   }
 }

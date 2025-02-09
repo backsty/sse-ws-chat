@@ -1,11 +1,23 @@
+import { formatDate } from '../utils/date.js';
+
 export class User {
-  constructor({ id, nickname, isOnline, lastActivity, avatar, status }) {
-    this.id = id;
-    this.nickname = nickname;
-    this.isOnline = isOnline;
+  static STATUSES = {
+    ACTIVE: 'active',
+    AWAY: 'away',
+    OFFLINE: 'offline'
+  };
+
+  constructor({ id, nickname, isOnline = false, lastActivity = Date.now(), avatar, status }) {
+    if (!nickname) {
+      throw new Error('Никнейм обязателен');
+    }
+
+    this.id = id || crypto.randomUUID();
+    this.nickname = nickname.trim();
+    this.isOnline = Boolean(isOnline);
     this.lastActivity = lastActivity;
-    this.avatar = avatar || this.getDefaultAvatar(nickname);
-    this.status = status || 'active';
+    this.avatar = avatar || this.getDefaultAvatar(this.nickname);
+    this.status = Object.values(User.STATUSES).includes(status) ? status : User.STATUSES.ACTIVE;
   }
 
   getDefaultAvatar(nickname) {
@@ -20,7 +32,11 @@ export class User {
   }
 
   getLastActivityTime() {
-    return new Date(this.lastActivity).toLocaleString();
+    return formatDate(this.lastActivity);
+  }
+
+  isActive() {
+    return this.status === User.STATUSES.ACTIVE;
   }
 
   toJSON() {

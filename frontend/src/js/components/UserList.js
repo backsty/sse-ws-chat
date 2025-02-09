@@ -1,57 +1,68 @@
-import { formatLastSeen } from '../utils/date.js';
+import { User } from '../models/User.js';
 
 export class UserList {
   constructor(onUserSelect) {
     this.onUserSelect = onUserSelect;
     this.users = new Map();
-    this.init();
+    this.element = this.createElements();
   }
 
-  init() {
-    this.container = document.createElement('div');
-    this.container.className = 'user-list hidden';
+  createElements() {
+    const container = document.createElement('div');
+    container.className = 'user-list hidden';
+    
+    container.innerHTML = `
+      <h2 class="chat-header">Пользователи онлайн</h2>
+      <div class="users-container"></div>
+    `;
 
-    this.usersList = document.createElement('div');
-    this.usersList.className = 'users';
-
-    this.container.appendChild(this.usersList);
-    document.body.appendChild(this.container);
+    this.usersContainer = container.querySelector('.users-container');
+    return container;
   }
 
-  updateUsers(users) {
-    this.users = new Map(users.map(user => [user.id, user]));
-    this.render();
-  }
+  updateUsers(usersData) {
+    if (!Array.isArray(usersData)) {
+      console.error('❌ Некорректный формат списка пользователей');
+      return;
+    }
 
-  render() {
-    this.usersList.innerHTML = '';
-    this.users.forEach(user => {
-      const userEl = document.createElement('div');
-      userEl.className = `user-item ${user.isOnline ? 'online' : ''}`;
-      
-      userEl.innerHTML = `
-        <img src="${user.avatar}" alt="${user.nickname}" class="user-avatar">
+    this.users.clear();
+    this.usersContainer.innerHTML = '';
+
+    if (usersData.length === 0) {
+      this.usersContainer.innerHTML = `
+        <div class="no-users">
+          Нет доступных пользователей
+        </div>
+      `;
+      return;
+    }
+
+    usersData.forEach(userData => {
+      const user = userData instanceof User ? userData : new User(userData);
+      this.users.set(user.id, user);
+      const userElement = document.createElement('div');
+      userElement.className = `user-item ${user.isOnline ? 'online' : ''}`;
+      userElement.innerHTML = `
+        <img class="user-avatar" src="${user.avatar}" alt="${user.nickname}">
         <div class="user-info">
           <div class="user-nickname">${user.nickname}</div>
           <div class="user-status">
-            ${user.isOnline ? 'в сети' : `был(а) ${formatLastSeen(user.lastActivity)}`}
+            <span class="status-indicator"></span>
+            ${user.isOnline ? 'в сети' : 'не в сети'}
           </div>
         </div>
       `;
-
-      userEl.addEventListener('click', () => {
-        if (this.onUserSelect) this.onUserSelect(user.id);
-      });
-
-      this.usersList.appendChild(userEl);
+      userElement.addEventListener('click', () => this.onUserSelect(user.id));
+      this.usersContainer.appendChild(userElement);
     });
   }
 
   show() {
-    this.container.classList.remove('hidden');
+    this.element.classList.remove('hidden');
   }
 
   hide() {
-    this.container.classList.add('hidden');
+    this.element.classList.add('hidden');
   }
 }
