@@ -2,7 +2,6 @@ import Koa from "koa";
 import http from "http";
 import cors from "@koa/cors";
 import { koaBody } from "koa-body";
-
 import { ChatWebSocketServer } from "./websocket/WebSocketServer.js";
 import config from "./utils/config.js";
 import { logger } from "./utils/logger.js";
