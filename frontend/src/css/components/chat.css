@@ -6,13 +6,31 @@
   position: relative;
 }
 
+.logout-button {
+  padding: 8px 16px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+  background-color: #ff0000;
+}
+
 .chat-header {
-  padding: var(--spacing-md);
-  background-color: var(--surface-color);
-  border-bottom: 1px solid var(--border-color);
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  padding: 10px 20px;
+  background-color: var(--surface-color);
+  border-bottom: 1px solid #ddd;
+  padding: var(--spacing-md);
   gap: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .messages-list {

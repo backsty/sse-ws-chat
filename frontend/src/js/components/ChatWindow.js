@@ -18,6 +18,7 @@ export class ChatWindow {
     container.innerHTML = `
       <div class="chat-header">
         <h2>Выберите пользователя для начала чата</h2>
+        <button class="logout-button">Выйти</button>
       </div>
       <div class="messages-list"></div>
       <div class="input-container">
@@ -27,6 +28,13 @@ export class ChatWindow {
         </button>
       </div>
     `;
+
+    const logoutButton = container.querySelector('.logout-button');
+    logoutButton.addEventListener('click', () => {
+      if (typeof this.onLogout === 'function') {
+        this.onLogout();
+      }
+    });
 
     this.messagesList = container.querySelector('.messages-list');
     this.input = container.querySelector('.chat-input');

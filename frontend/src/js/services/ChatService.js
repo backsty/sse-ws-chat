@@ -2,6 +2,7 @@ import { Chat } from '../models/Chat.js';
 import { Message } from '../models/Message.js';
 import { User } from '../models/User.js';
 import { EventEmitter } from '../utils/events.js';
+import { CookieManager } from '../utils/cookies.js';
 
 export class ChatService extends EventEmitter {
   constructor(wsClient) {
@@ -12,6 +13,8 @@ export class ChatService extends EventEmitter {
     this.currentUser = null;
     this.pendingMessages = new Map();
     this.bindEvents();
+
+    this.checkSavedSession();
   }
 
   bindEvents() {
@@ -29,11 +32,9 @@ export class ChatService extends EventEmitter {
 
     // Авторизация
     this.ws.on('loginSuccess', (data) => {
-      if (!data?.user) {
-        console.error('❌ Некорректные данные пользователя:', data);
-        return;
-      }
-      this.currentUser = new User(data.user);
+      this.currentUser = User.fromJSON(data.user);
+      // Сохраняем данные пользователя
+      CookieManager.set('chatUser', JSON.stringify(this.currentUser.toJSON()));
       this.emit('loginSuccess', this.currentUser);
     });
 
@@ -95,10 +96,23 @@ export class ChatService extends EventEmitter {
     });
   }
 
+  checkSavedSession() {
+    const savedUser = CookieManager.get('chatUser');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        this.login(userData.nickname);
+      } catch (error) {
+        console.error('Ошибка восстановления сессии:', error);
+        CookieManager.delete('chatUser');
+      }
+    }
+  }
+
   // Методы для работы с пользователями
   login(nickname) {
     if (!nickname?.trim()) {
-      throw new Error('Никнейм не может быть пустым');
+      throw new Error('Никнейм обязателен');
     }
     this.ws.send('login', { nickname: nickname.trim() });
   }
@@ -108,6 +122,9 @@ export class ChatService extends EventEmitter {
     this.currentUser = null;
     this.chats.clear();
     this.users.clear();
+    // Удаляем данные пользователя из куков
+    CookieManager.delete('chatUser');
+    this.emit('logout');
   }
 
   // Методы для работы с чатами

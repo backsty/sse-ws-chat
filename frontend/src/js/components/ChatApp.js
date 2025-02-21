@@ -27,6 +27,7 @@ export class ChatApp {
     this.loginModal = new LoginModal(this.handleLogin.bind(this));
     this.userList = new UserList(this.handleUserSelect.bind(this));
     this.chatWindow = new ChatWindow(this.handleSendMessage.bind(this));
+    this.chatWindow.onLogout = this.handleLogout.bind(this);
 
     this.chatWindow.setUserList(this.userList);
 
@@ -90,6 +91,12 @@ export class ChatApp {
   handleLogin(nickname) {
     console.log('🔑 Попытка входа:', nickname);
     this.chatService.login(nickname);
+  }
+
+  handleLogout() {
+    this.chatService.logout();
+    this.container.classList.add('hidden');
+    this.showLoginModal();
   }
 
   handleUserSelect(userId) {
