@@ -3,6 +3,7 @@ import { ChatService } from '../services/ChatService.js';
 import { LoginModal } from './LoginModal.js';
 import { UserList } from './UserList.js';
 import { ChatWindow } from './ChatWindow.js';
+import { CookieManager } from '../utils/cookies.js';
 
 export class ChatApp {
   constructor() {
@@ -18,7 +19,7 @@ export class ChatApp {
     this.init();
   }
 
-  init() {
+  async init() {
     // Создаем основной контейнер
     this.container = document.createElement('div');
     this.container.className = 'chat-app hidden';
@@ -38,10 +39,17 @@ export class ChatApp {
     this.container.appendChild(this.chatWindow.element);
 
     this.bindEvents();
-    this.showLoginModal();
+    const savedUser = CookieManager.get('chatUser');
+    if (!savedUser) {
+      this.showLoginModal();
+    }
   }
 
   bindEvents() {
+    this.wsClient.on('connect', () => {
+      console.log('✅ WebSocket подключен');
+    });
+
     this.chatService.on('loginSuccess', (user) => {
       console.log('✅ Успешный вход:', user);
       this.currentUser = user;
@@ -49,8 +57,6 @@ export class ChatApp {
       this.container.classList.remove('hidden');
       this.userList.show();
       this.chatWindow.show();
-
-      this.chatService.ws.send('getUserList');
     });
 
     this.chatService.on('loginError', (error) => {
@@ -96,6 +102,8 @@ export class ChatApp {
   handleLogout() {
     this.chatService.logout();
     this.container.classList.add('hidden');
+    this.userList.hide();
+    this.chatWindow.hide();
     this.showLoginModal();
   }
 

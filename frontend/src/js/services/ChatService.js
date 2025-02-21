@@ -13,40 +13,44 @@ export class ChatService extends EventEmitter {
     this.currentUser = null;
     this.pendingMessages = new Map();
     this.bindEvents();
-
-    this.checkSavedSession();
   }
 
   bindEvents() {
     // Статус подключения
-    this.ws.on('connect', () => {
+    this.ws.on('connect', async () => {
+      console.log('✅ WebSocket подключен');
       this.emit('connect');
-      if (this.currentUser) {
-        this.login(this.currentUser.nickname);
-      }
+      await this.checkSavedSession();
     });
 
     this.ws.on('disconnect', () => {
       this.emit('disconnect');
     });
 
-    // Авторизация
     this.ws.on('loginSuccess', (data) => {
+      console.log('✅ Успешный вход:', data);
       this.currentUser = User.fromJSON(data.user);
-      // Сохраняем данные пользователя
       CookieManager.set('chatUser', JSON.stringify(this.currentUser.toJSON()));
       this.emit('loginSuccess', this.currentUser);
+      
+      // Запрашиваем списки после успешного входа
+      this.ws.send('getUserList');
+      this.ws.send('getChatList');
     });
 
     this.ws.on('loginError', (data) => {
+      console.error('❌ Ошибка входа:', data);
+      // Удаляем куки при ошибке
+      CookieManager.delete('chatUser');
       this.emit('loginError', data.message);
     });
 
-    // Пользователи
     this.ws.on('userList', (data) => {
+      console.log('👥 Получен список пользователей:', data);
       this.users.clear();
-      data.users.forEach((userData) => {
-        this.users.set(userData.id, new User(userData));
+      data.users.forEach(userData => {
+        const user = User.fromJSON(userData);
+        this.users.set(user.id, user);
       });
       this.emit('userListUpdate', Array.from(this.users.values()));
     });
@@ -66,9 +70,9 @@ export class ChatService extends EventEmitter {
       }
     });
 
-    // Чаты и сообщения
     this.ws.on('chatCreated', (data) => {
-      const chat = new Chat(data.chat);
+      console.log('💬 Создан новый чат:', data);
+      const chat = Chat.fromJSON(data.chat);
       this.chats.set(chat.id, chat);
       this.emit('chatCreated', chat);
     });
@@ -96,35 +100,39 @@ export class ChatService extends EventEmitter {
     });
   }
 
-  checkSavedSession() {
+  async checkSavedSession() {
     const savedUser = CookieManager.get('chatUser');
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
-        this.login(userData.nickname);
+        console.log('🔄 Восстановление сессии:', userData);
+        await this.login(userData.nickname);
+        return true;
       } catch (error) {
-        console.error('Ошибка восстановления сессии:', error);
+        console.error('❌ Ошибка восстановления сессии:', error);
         CookieManager.delete('chatUser');
       }
     }
+    return false;
   }
 
-  // Методы для работы с пользователями
-  login(nickname) {
+  async login(nickname) {
     if (!nickname?.trim()) {
       throw new Error('Никнейм обязателен');
     }
-    this.ws.send('login', { nickname: nickname.trim() });
+    console.log('🔑 Попытка входа:', nickname);
+    await this.ws.send('login', { nickname: nickname.trim() });
   }
 
   logout() {
-    this.ws.send('logout');
-    this.currentUser = null;
-    this.chats.clear();
-    this.users.clear();
-    // Удаляем данные пользователя из куков
-    CookieManager.delete('chatUser');
-    this.emit('logout');
+    if (this.currentUser) {
+      this.ws.send('logout');
+      CookieManager.delete('chatUser');
+      this.currentUser = null;
+      this.chats.clear();
+      this.users.clear();
+      this.emit('logout');
+    }
   }
 
   // Методы для работы с чатами

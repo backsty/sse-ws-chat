@@ -38,7 +38,12 @@ export class WebSocketClient extends EventEmitter {
       console.log('❌ WebSocket отключен');
       this.isConnected = false;
       this.emit('disconnect');
-      this.reconnect();
+
+      // При отключении проверяем наличие сохраненной сессии
+      const savedUser = CookieManager.get('chatUser');
+      if (savedUser) {
+        this.reconnect();
+      }
     };
 
     this.ws.onerror = (error) => {

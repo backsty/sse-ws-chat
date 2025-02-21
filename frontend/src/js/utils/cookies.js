@@ -12,7 +12,7 @@ export class CookieManager {
         for (let cookie of cookies) {
             cookie = cookie.trim();
             if (cookie.indexOf(nameEQ) === 0) {
-            return cookie.substring(nameEQ.length);
+                return cookie.substring(nameEQ.length);
             }
         }
         return null;

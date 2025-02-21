@@ -80,21 +80,39 @@ export class ChatWebSocketServer {
   }
 
   handleLogin(socket, { nickname }) {
-    if (this.userManager.isNicknameExists(nickname)) {
-      this.sendError(socket, "loginError", "Nickname already taken");
-      return;
+    try {
+      if (this.userManager.isNicknameExists(nickname)) {
+        this.sendError(socket, "loginError", "Никнейм уже занят");
+        return;
+      }
+
+      const user = this.userManager.addUser(socket, nickname);
+      socket.userId = user.id;
+
+      // Отправляем успешный ответ с данными пользователя
+      this.sendToSocket(socket, "loginSuccess", { user: user.toJSON() });
+
+      // Отправляем текущий список пользователей
+      this.sendToSocket(socket, "userList", {
+        users: this.userManager.getAllUsers().map(u => u.toJSON())
+      });
+
+      // Отправляем существующие чаты пользователя
+      const userChats = this.chatManager.getUserChats(user.id);
+      if (userChats.length > 0) {
+        this.sendToSocket(socket, "chatList", {
+          chats: userChats.map(chat => chat.toJSON())
+        });
+      }
+
+      // Оповещаем других пользователей
+      this.broadcast("userJoined", { user: user.toJSON() }, user.id);
+
+      console.log(`✅ Пользователь вошел: ${nickname}`);
+    } catch (error) {
+      console.error('❌ Ошибка при входе:', error);
+      this.sendError(socket, "loginError", "Ошибка при входе");
     }
-
-    const user = this.userManager.addUser(socket, nickname);
-    socket.userId = user.id;
-
-    this.sendToSocket(socket, "loginSuccess", { user: user.toJSON() });
-    this.sendToSocket(socket, "userList", {
-      users: this.userManager.getAllUsers().map((u) => u.toJSON()),
-    });
-    this.broadcast("userJoined", { user: user.toJSON() }, user.id);
-
-    logger.info(`User logged in: ${nickname}`);
   }
 
   handleChatMessage(socket, { chatId, text }) {
