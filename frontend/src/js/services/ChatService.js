@@ -18,9 +18,16 @@ export class ChatService extends EventEmitter {
   bindEvents() {
     // Статус подключения
     this.ws.on('connect', async () => {
-      console.log('✅ WebSocket подключен');
-      this.emit('connect');
-      await this.checkSavedSession();
+      if (this.currentUser) {
+        const savedChats = JSON.parse(localStorage.getItem('chats') || '{}');
+        Object.values(savedChats).forEach((chatData) => {
+          if (chatData.participants.includes(this.currentUser.id)) {
+            const chat = new Chat(chatData);
+            this.chats.set(chat.id, chat);
+            this.emit('chatCreated', { chat });
+          }
+        });
+      }
     });
 
     this.ws.on('disconnect', () => {
@@ -71,27 +78,86 @@ export class ChatService extends EventEmitter {
     });
 
     this.ws.on('chatCreated', (data) => {
-      console.log('💬 Создан новый чат:', data);
-      const chat = Chat.fromJSON(data.chat);
-      this.chats.set(chat.id, chat);
-      this.emit('chatCreated', chat);
+      console.log('📨 Создан новый чат:', data);
+      if (!data?.chat) {
+        console.error('❌ Некорректные данные чата:', data);
+        return;
+      }
+
+      try {
+        // Убедимся, что у чата есть все необходимые данные
+        const chatData = {
+          id: data.chat.id,
+          participants: Array.isArray(data.chat.participants) ? data.chat.participants : [],
+          messages: Array.isArray(data.chat.messages) ? data.chat.messages : [],
+          unreadCount: data.chat.unreadCount || 0,
+        };
+
+        const chat = new Chat(chatData);
+        this.chats.set(chat.id, chat);
+
+        // Сохраняем в localStorage
+        const savedChats = JSON.parse(localStorage.getItem('chats') || '{}');
+        savedChats[chat.id] = chat.toJSON();
+        localStorage.setItem('chats', JSON.stringify(savedChats));
+
+        console.log('✅ Чат успешно создан:', chat);
+        this.emit('chatCreated', { chat });
+      } catch (error) {
+        console.error('❌ Ошибка при создании чата:', error);
+      }
     });
+
+    // this.ws.on('message', (data) => {
+    //   console.log('📨 Получено сообщение:', data);
+    //   const chat = this.chats.get(data.chatId);
+    //   if (chat) {
+    //     const message = new Message({
+    //       id: data.messageId,
+    //       from: data.from,
+    //       text: data.text,
+    //       timestamp: data.timestamp,
+    //       status: Message.STATUSES.DELIVERED,
+    //     });
+
+    //     chat.addMessage(message);
+    //     this.emit('newMessage', { chat, message });
+    //   }
+    // });
 
     this.ws.on('message', (data) => {
       console.log('📨 Получено сообщение:', data);
-
       const chat = this.chats.get(data.chatId);
       if (chat) {
+        // Проверяем, нет ли уже такого сообщения
+        if (chat.messages.some((m) => m.id === data.messageId)) {
+          console.log('⚠️ Сообщение уже существует:', data.messageId);
+          return;
+        }
+
         const message = new Message({
           id: data.messageId,
           from: data.from,
           text: data.text,
           timestamp: data.timestamp,
-          status: 'delivered',
+          status: Message.STATUSES.DELIVERED,
         });
 
         chat.addMessage(message);
         this.emit('newMessage', { chat, message });
+      }
+    });
+
+    this.ws.on('messageError', (data) => {
+      console.error('❌ Ошибка отправки сообщения:', data);
+      const pendingMessage = this.pendingMessages.get(data.message.messageId);
+      if (pendingMessage) {
+        pendingMessage.cleanup();
+        pendingMessage.message.status = Message.STATUSES.ERROR;
+        this.emit('messageUpdate', {
+          chat: this.chats.get(pendingMessage.message.chatId),
+          message: pendingMessage.message,
+        });
       }
     });
 
@@ -137,60 +203,32 @@ export class ChatService extends EventEmitter {
 
   // Методы для работы с чатами
   startChat(targetUserId) {
-    if (!targetUserId) {
-      throw new Error('ID пользователя не указан');
+    if (!targetUserId || !this.currentUser) {
+      console.warn('⚠️ Некорректные параметры для создания чата');
+      return;
     }
+
+    // Проверяем, существует ли уже чат с этим пользователем
+    const chatId = [this.currentUser.id, targetUserId].sort().join(':');
+    const existingChat = this.chats.get(chatId);
+
+    if (existingChat) {
+      console.log('📝 Используем существующий чат:', chatId);
+      this.emit('chatSelected', { chat: existingChat });
+      return;
+    }
+
+    console.log('🔄 Создаем новый чат с:', targetUserId);
     this.ws.send('startChat', { targetUserId });
   }
 
-  // sendMessage(chatId, text) {
-  //   if (!chatId || !text?.trim()) {
-  //     console.warn('⚠️ Некорректные параметры сообщения');
-  //     return;
-  //   }
-
-  //   const messageId = crypto.randomUUID();
-  //   const message = new Message({
-  //     id: messageId,
-  //     from: this.currentUser.id,
-  //     chatId,
-  //     text: text.trim(),
-  //     timestamp: Date.now(),
-  //     status: 'sending',
-  //   });
-
-  //   // Добавляем сообщение локально сразу
-  //   const chat = this.chats.get(chatId);
-  //   if (chat) {
-  //     chat.addMessage(message);
-  //     this.emit('newMessage', { chat, message });
-  //   }
-
-  //   // Отправляем на сервер
-  //   this.pendingMessages.set(messageId, message);
-  //   this.ws.send('message', {
-  //     chatId,
-  //     text: text.trim(),
-  //     messageId,
-  //     from: this.currentUser.id,
-  //   });
-  // }
-
   sendMessage(chatId, text) {
-    // Валидация входных параметров
     if (!chatId || !text?.trim()) {
-      console.warn('⚠️ Некорректные параметры сообщения');
       return Promise.reject(new Error('Некорректные параметры сообщения'));
-    }
-
-    if (!this.currentUser) {
-      console.warn('⚠️ Пользователь не авторизован');
-      return Promise.reject(new Error('Пользователь не авторизован'));
     }
 
     const chat = this.chats.get(chatId);
     if (!chat) {
-      console.warn('⚠️ Чат не найден:', chatId);
       return Promise.reject(new Error('Чат не найден'));
     }
 
@@ -199,70 +237,56 @@ export class ChatService extends EventEmitter {
       const message = new Message({
         id: messageId,
         from: this.currentUser.id,
-        chatId,
+        chatId, // Добавляем chatId в сообщение
         text: text.trim(),
         timestamp: Date.now(),
         status: Message.STATUSES.SENDING,
       });
 
-      // Добавляем сообщение локально
       chat.addMessage(message);
       this.emit('newMessage', { chat, message });
 
-      // Таймаут для отправки
-      const timeout = setTimeout(() => {
+      const cleanup = () => {
+        clearTimeout(timeout);
+        this.ws.off('messageSent', handleMessageSent);
+        this.ws.off('messageError', handleMessageError);
         this.pendingMessages.delete(messageId);
-        message.status = Message.STATUSES.FAILED;
-        this.emit('messageUpdate', { chat, message });
-        reject(new Error('Таймаут отправки сообщения'));
-      }, 10000);
+      };
 
-      // Обработчик успешной отправки
-      const onMessageSent = (response) => {
+      const handleMessageSent = (response) => {
         if (response.messageId === messageId) {
-          clearTimeout(timeout);
-          this.ws.off('messageSent', onMessageSent);
-          this.ws.off('messageError', onMessageError);
-
-          this.pendingMessages.delete(messageId);
+          cleanup();
           message.status = Message.STATUSES.SENT;
-          Object.assign(message, response.message);
-
           this.emit('messageUpdate', { chat, message });
           resolve(message);
         }
       };
 
-      // Обработчик ошибки
-      const onMessageError = (error) => {
-        if (error.messageId === messageId) {
-          clearTimeout(timeout);
-          this.ws.off('messageSent', onMessageSent);
-          this.ws.off('messageError', onMessageError);
-
-          this.pendingMessages.delete(messageId);
-          message.status = Message.STATUSES.FAILED;
+      const handleMessageError = (error) => {
+        if (error.message.messageId === messageId) {
+          cleanup();
+          message.status = Message.STATUSES.ERROR;
           this.emit('messageUpdate', { chat, message });
-          reject(new Error(error.message || 'Ошибка отправки сообщения'));
+          reject(new Error(error.message.message || 'Ошибка отправки сообщения'));
         }
       };
 
-      // Подписываемся на события
-      this.ws.on('messageSent', onMessageSent);
-      this.ws.on('messageError', onMessageError);
+      const timeout = setTimeout(() => {
+        cleanup();
+        message.status = Message.STATUSES.ERROR;
+        this.emit('messageUpdate', { chat, message });
+        reject(new Error('Таймаут отправки сообщения'));
+      }, 15000);
 
-      // Сохраняем сообщение в очереди ожидания
+      this.ws.on('messageSent', handleMessageSent);
+      this.ws.on('messageError', handleMessageError);
+
       this.pendingMessages.set(messageId, {
         message,
+        cleanup,
         timestamp: Date.now(),
-        cleanup: () => {
-          clearTimeout(timeout);
-          this.ws.off('messageSent', onMessageSent);
-          this.ws.off('messageError', onMessageError);
-        },
       });
 
-      // Отправляем на сервер
       this.ws.send('message', {
         chatId,
         text: message.text,

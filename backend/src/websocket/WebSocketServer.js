@@ -82,6 +82,15 @@ export class ChatWebSocketServer {
           });
         }
         break;
+      case "syncChats":
+        const user1 = this.getUserBySocket(socket);
+        if (user1) {
+          const userChats = this.chatManager.getUserChats(user1.id);
+          this.sendToSocket(socket, "chatList", {
+            chats: userChats.map((chat) => chat.toJSON()),
+          });
+        }
+        break;
       default:
         logger.warn("Unknown message type", { type: message.type });
     }
@@ -123,25 +132,80 @@ export class ChatWebSocketServer {
     }
   }
 
-  handleChatMessage(socket, { chatId, text }) {
+  handleChatMessage(socket, { chatId, text, messageId }) {
     const user = this.getUserBySocket(socket);
-    if (!user) return;
+    if (!user) {
+      return this.sendError(socket, "messageError", {
+        messageId, // Возвращаем messageId в случае ошибки
+        message: "Пользователь не авторизован",
+      });
+    }
 
     const chat = this.chatManager.getChat(chatId);
     if (!chat || !chat.hasParticipant(user.id)) {
-      logger.warn("Attempt to send message to unavailable chat", { chatId });
-      return;
+      return this.sendError(socket, "messageError", {
+        messageId, // Возвращаем messageId в случае ошибки
+        message: "Чат недоступен",
+      });
     }
 
-    this.chatManager.addMessage(chatId, user.id, text);
+    const message = this.chatManager.addMessage(chatId, user.id, text);
+    if (message) {
+      // Отправляем подтверждение отправителю
+      this.sendToSocket(socket, "messageSent", {
+        messageId, // Используем полученный messageId
+        message: message.toJSON(),
+      });
+
+      // Отправляем сообщение другим участникам чата
+      chat.participants.forEach((participantId) => {
+        if (participantId !== user.id) {
+          const participant = this.userManager.getUser(participantId);
+          if (participant && participant.isConnected()) {
+            this.sendToSocket(participant.socket, "message", {
+              chatId,
+              messageId: message.id, // Используем ID созданного сообщения
+              from: user.id,
+              text,
+              timestamp: message.timestamp,
+            });
+          }
+        }
+      });
+    }
   }
 
   handleStartChat(socket, { targetUserId }) {
     const user = this.getUserBySocket(socket);
-    if (!user) return;
+    if (!user) {
+      return this.sendError(
+        socket,
+        "startChatError",
+        "Пользователь не авторизован",
+      );
+    }
+
+    const targetUser = this.userManager.getUser(targetUserId);
+    if (!targetUser) {
+      return this.sendError(
+        socket,
+        "startChatError",
+        "Целевой пользователь не найден",
+      );
+    }
 
     const chat = this.chatManager.createChat(user.id, targetUserId);
+
+    // Отправляем информацию о чате обоим участникам
     this.sendToSocket(socket, "chatCreated", { chat: chat.toJSON() });
+    this.sendToSocket(targetUser.socket, "chatCreated", {
+      chat: chat.toJSON(),
+    });
+
+    logger.info(
+      `Создан новый чат между ${user.nickname} и ${targetUser.nickname}`,
+    );
+    return chat;
   }
 
   handleDisconnect(user) {

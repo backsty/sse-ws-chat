@@ -2,23 +2,41 @@ import { Message } from './Message.js';
 import { formatDate } from '../utils/date.js';
 
 export class Chat {
-  constructor({ id, participants, messages = [], unreadCount = 0 }) {
-    this.id = id || crypto.randomUUID();
+  constructor({ id, participants = [], messages = [], unreadCount = 0 }) {
+    if (!id && (!participants || !Array.isArray(participants))) {
+      throw new Error('Для создания чата необходим id или массив участников');
+    }
+
+    this.id = id || [participants].sort().join(':');
     this.participants = new Set(participants);
-    this.messages = messages.map((m) => Message.fromJSON(m));
-    this.unreadCount = Math.max(0, unreadCount);
+    this.messages = Array.isArray(messages)
+      ? messages.map((m) => (m instanceof Message ? m : Message.fromJSON(m)))
+      : [];
+    this.unreadCount = unreadCount;
     this.lastActivity = this.getLastActivity();
   }
 
   static fromJSON(data) {
-    if (!data?.participants?.length) {
-      throw new Error('Чат должен иметь участников');
+    if (!data) {
+      throw new Error('Отсутствуют данные для создания чата');
     }
-    return new Chat(data);
+
+    return new Chat({
+      id: data.id,
+      participants: Array.isArray(data.participants) ? data.participants : [],
+      messages: Array.isArray(data.messages) ? data.messages : [],
+      unreadCount: data.unreadCount || 0,
+    });
   }
 
   addMessage(message) {
     const msg = message instanceof Message ? message : Message.fromJSON(message);
+
+    if (this.messages.some((m) => m.id === msg.id)) {
+      console.log('⚠️ Сообщение уже существует в чате:', msg.id);
+      return msg;
+    }
+
     this.messages.push(msg);
     this.lastActivity = Date.now();
     return msg;

@@ -9,6 +9,7 @@ export class ChatWindow {
     this.currentUser = null;
     this.userList = null;
     this.element = this.createElements();
+    this.messages = new Map();
   }
 
   createElements() {
@@ -62,54 +63,74 @@ export class ChatWindow {
   }
 
   setCurrentChat(chat, currentUser) {
+    if (!chat || !currentUser) {
+      console.warn('⚠️ Некорректные параметры для установки чата');
+      return;
+    }
+
     this.currentChat = chat;
     this.currentUser = currentUser;
-    this.messagesList.innerHTML = '';
 
-    // Получаем другого участника чата
-    const otherUserId = Array.from(chat.participants).find((id) => id !== currentUser.id);
-    const otherUser = this.userList?.users.get(otherUserId);
+    // Очищаем список сообщений
+    this.messagesList.innerHTML = '';
+    this.messages.clear();
 
     // Обновляем заголовок
-    this.header.textContent = otherUser ? `Чат с ${otherUser.nickname}` : 'Чат';
+    const participants = Array.from(chat.participants);
+    const otherUser = this.userList?.users.get(participants.find((id) => id !== currentUser.id));
 
-    // Показываем чат и активируем поле ввода
-    this.show();
-    this.input.disabled = false;
-    this.sendButton.disabled = false;
-    this.input.focus();
+    const header = this.element.querySelector('.chat-header h2');
+    if (header) {
+      header.textContent = otherUser ? otherUser.nickname : 'Чат';
+    }
 
-    // Отображаем существующие сообщения
-    chat.messages.forEach((msg) => this.addMessage(msg));
+    // Добавляем существующие сообщения
+    if (Array.isArray(chat.messages)) {
+      chat.messages.forEach((msg) => this.addMessage(msg));
+    }
+
+    this.scrollToBottom();
   }
 
   addMessage(messageData) {
-    console.log('📝 Добавление сообщения:', messageData);
+    const message = messageData instanceof Message ? messageData : new Message(messageData);
 
-    const message =
-      messageData instanceof Message
-        ? messageData
-        : new Message({
-            id: messageData.id,
-            from: messageData.from || this.currentUser.id, // Добавляем отправителя
-            text: messageData.text,
-            timestamp: messageData.timestamp || Date.now(),
-            status: messageData.status,
-          });
+    if (this.messages.has(message.id)) {
+      console.log('⚠️ Сообщение уже отображается:', message.id);
+      return;
+    }
+
+    this.messages.set(message.id, message);
 
     const messageEl = document.createElement('div');
+    messageEl.id = `message-${message.id}`;
     const isOwn = message.from === this.currentUser?.id;
     messageEl.className = `message ${isOwn ? 'outgoing' : 'incoming'}`;
 
     messageEl.innerHTML = `
-      <div class="message-content">
-        <div class="message-text">${message.text}</div>
-        <div class="message-time">${formatTime(message.timestamp)}</div>
+    <div class="message-content">
+      <div class="message-text">${message.text}</div>
+      <div class="message-info">
+        <span class="message-time">${formatTime(message.timestamp)}</span>
       </div>
+    </div>
     `;
 
     this.messagesList.appendChild(messageEl);
     this.scrollToBottom();
+  }
+
+  updateMessage(message) {
+    const messageEl = document.getElementById(`message-${message.id}`);
+    if (messageEl) {
+      const statusEl = messageEl.querySelector('.message-status');
+      if (statusEl) {
+        statusEl.textContent = message.status;
+
+        // Добавляем визуальное отображение статуса
+        messageEl.className = `message outgoing ${message.status.toLowerCase()}`;
+      }
+    }
   }
 
   scrollToBottom() {

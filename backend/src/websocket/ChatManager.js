@@ -11,16 +11,33 @@ export class ChatManager {
   }
 
   createChat(user1Id, user2Id) {
+    // Сортируем ID для консистентности
     const chatId = [user1Id, user2Id].sort().join(":");
 
-    if (this.chats.has(chatId)) {
-      return this.chats.get(chatId);
+    // Проверяем существующий чат
+    let chat = this.chats.get(chatId);
+    if (chat) {
+      logger.info(`Найден существующий чат: ${chatId}`);
+      return chat;
     }
 
-    const chat = new Chat([user1Id, user2Id]);
-    chat.userManager = this.userManager;
+    // Создаем новый чат
+    chat = new Chat([user1Id, user2Id]);
+    chat.id = chatId; // Важно! Устанавливаем тот же ID
     this.chats.set(chatId, chat);
-    logger.info(`Создан новый чат: ${chatId}`);
+
+    logger.info(`Создан новый чат: ${chatId}`, {
+      participants: [user1Id, user2Id],
+    });
+
+    return chat;
+  }
+
+  getChat(chatId) {
+    const chat = this.chats.get(chatId);
+    if (!chat) {
+      logger.warn(`Чат не найден: ${chatId}`);
+    }
     return chat;
   }
 
@@ -46,7 +63,6 @@ export class ChatManager {
       return null;
     }
 
-    // Проверяем, что отправитель является участником чата
     if (!chat.hasParticipant(fromId)) {
       logger.warn("User not in chat participants", { chatId, userId: fromId });
       return null;
@@ -54,19 +70,6 @@ export class ChatManager {
 
     const message = new Message(fromId, text);
     chat.addMessage(message);
-
-    // Отправляем сообщение только активным участникам
-    chat.participants.forEach((userId) => {
-      const user = this.userManager.getUser(userId);
-      if (user && user.isConnected()) {
-        user.send({
-          type: "message",
-          chatId,
-          message: message.toJSON(),
-        });
-      }
-    });
-
     logger.info("New message in chat", { chatId, messageId: message.id });
     return message;
   }

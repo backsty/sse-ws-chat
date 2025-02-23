@@ -117,9 +117,21 @@ export class ChatApp {
       }
     });
 
-    this.chatService.on('chatCreated', (chat) => {
-      console.log('💬 Чат создан:', chat);
-      this.chatWindow.setCurrentChat(chat, this.currentUser);
+    this.chatService.on('chatCreated', ({ chat }) => {
+      if (!chat) {
+        console.error('❌ Получены некорректные данные чата');
+        return;
+      }
+
+      console.log('✅ Создан новый чат:', chat);
+
+      try {
+        // Обновляем текущий чат
+        this.currentChat = chat;
+        this.chatWindow.setCurrentChat(chat, this.currentUser);
+      } catch (error) {
+        console.error('❌ Ошибка при установке чата:', error);
+      }
     });
 
     this.chatService.on('newMessage', (data) => {

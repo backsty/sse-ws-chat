@@ -73,7 +73,6 @@ export class WebSocketClient extends EventEmitter {
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📨 Получено сообщение:', data);
 
         // Удаляем сообщение из ожидающих
         if (data.messageId) {
