@@ -32,7 +32,7 @@ export class ChatService extends EventEmitter {
       this.currentUser = User.fromJSON(data.user);
       CookieManager.set('chatUser', JSON.stringify(this.currentUser.toJSON()));
       this.emit('loginSuccess', this.currentUser);
-      
+
       // Запрашиваем списки после успешного входа
       this.ws.send('getUserList');
       this.ws.send('getChatList');
@@ -48,7 +48,7 @@ export class ChatService extends EventEmitter {
     this.ws.on('userList', (data) => {
       console.log('👥 Получен список пользователей:', data);
       this.users.clear();
-      data.users.forEach(userData => {
+      data.users.forEach((userData) => {
         const user = User.fromJSON(userData);
         this.users.set(user.id, user);
       });

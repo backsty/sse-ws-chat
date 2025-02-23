@@ -94,14 +94,14 @@ export class ChatWebSocketServer {
 
       // Отправляем текущий список пользователей
       this.sendToSocket(socket, "userList", {
-        users: this.userManager.getAllUsers().map(u => u.toJSON())
+        users: this.userManager.getAllUsers().map((u) => u.toJSON()),
       });
 
       // Отправляем существующие чаты пользователя
       const userChats = this.chatManager.getUserChats(user.id);
       if (userChats.length > 0) {
         this.sendToSocket(socket, "chatList", {
-          chats: userChats.map(chat => chat.toJSON())
+          chats: userChats.map((chat) => chat.toJSON()),
         });
       }
 
@@ -110,7 +110,7 @@ export class ChatWebSocketServer {
 
       console.log(`✅ Пользователь вошел: ${nickname}`);
     } catch (error) {
-      console.error('❌ Ошибка при входе:', error);
+      console.error("❌ Ошибка при входе:", error);
       this.sendError(socket, "loginError", "Ошибка при входе");
     }
   }
