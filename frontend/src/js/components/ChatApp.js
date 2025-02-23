@@ -7,6 +7,7 @@ import { CookieManager } from '../utils/cookies.js';
 
 export class ChatApp {
   constructor() {
+    this.broadcastChannel = new BroadcastChannel('chat-sync');
     const wsUrl =
       process.env.NODE_ENV === 'production'
         ? 'wss://sse-ws-chat-4ur5.onrender.com/ws'
@@ -17,6 +18,24 @@ export class ChatApp {
     this.wsClient = new WebSocketClient(wsUrl);
     this.chatService = new ChatService(this.wsClient);
     this.init();
+    this.bindBroadcastEvents();
+  }
+
+  bindBroadcastEvents() {
+    // Обработка событий между вкладками
+    this.broadcastChannel.onmessage = (event) => {
+      switch (event.data.type) {
+        case 'userLoggedIn':
+          // Автоматически восстанавливаем сессию на других вкладках
+          if (!this.currentUser) {
+            this.chatService.login(event.data.nickname);
+          }
+          break;
+        case 'userLoggedOut':
+          this.handleLogout(true);
+          break;
+      }
+    };
   }
 
   async init() {
@@ -39,10 +58,28 @@ export class ChatApp {
     this.container.appendChild(this.chatWindow.element);
 
     this.bindEvents();
+    await this.restoreSession();
+    // const savedUser = CookieManager.get('chatUser');
+    // if (!savedUser) {
+    //   this.showLoginModal();
+    // }
+  }
+
+  async restoreSession() {
     const savedUser = CookieManager.get('chatUser');
-    if (!savedUser) {
-      this.showLoginModal();
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        console.log('🔄 Восстановление сессии:', userData);
+        await this.chatService.login(userData.nickname);
+        return true;
+      } catch (error) {
+        console.error('❌ Ошибка восстановления сессии:', error);
+        CookieManager.delete('chatUser');
+      }
     }
+    this.showLoginModal();
+    return false;
   }
 
   bindEvents() {
@@ -57,6 +94,13 @@ export class ChatApp {
       this.container.classList.remove('hidden');
       this.userList.show();
       this.chatWindow.show();
+
+      CookieManager.set('chatUser', JSON.stringify(user));
+
+      this.broadcastChannel.postMessage({
+        type: 'userLoggedIn',
+        nickname: user.nickname,
+      });
     });
 
     this.chatService.on('loginError', (error) => {
@@ -99,11 +143,20 @@ export class ChatApp {
     this.chatService.login(nickname);
   }
 
-  handleLogout() {
+  handleLogout(skipBroadcast = false) {
     this.chatService.logout();
     this.container.classList.add('hidden');
     this.userList.hide();
     this.chatWindow.hide();
+    CookieManager.delete('chatUser');
+    this.currentUser = null;
+
+    if (!skipBroadcast) {
+      this.broadcastChannel.postMessage({
+        type: 'userLoggedOut',
+      });
+    }
+
     this.showLoginModal();
   }
 

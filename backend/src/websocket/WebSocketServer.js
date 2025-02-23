@@ -74,6 +74,14 @@ export class ChatWebSocketServer {
       case "startChat":
         this.handleStartChat(socket, message);
         break;
+      case "getUserList":
+        const user = this.getUserBySocket(socket);
+        if (user) {
+          this.sendToSocket(socket, "userList", {
+            users: this.userManager.getAllUsers().map((u) => u.toJSON()),
+          });
+        }
+        break;
       default:
         logger.warn("Unknown message type", { type: message.type });
     }

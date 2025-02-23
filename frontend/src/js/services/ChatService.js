@@ -143,35 +143,132 @@ export class ChatService extends EventEmitter {
     this.ws.send('startChat', { targetUserId });
   }
 
+  // sendMessage(chatId, text) {
+  //   if (!chatId || !text?.trim()) {
+  //     console.warn('⚠️ Некорректные параметры сообщения');
+  //     return;
+  //   }
+
+  //   const messageId = crypto.randomUUID();
+  //   const message = new Message({
+  //     id: messageId,
+  //     from: this.currentUser.id,
+  //     chatId,
+  //     text: text.trim(),
+  //     timestamp: Date.now(),
+  //     status: 'sending',
+  //   });
+
+  //   // Добавляем сообщение локально сразу
+  //   const chat = this.chats.get(chatId);
+  //   if (chat) {
+  //     chat.addMessage(message);
+  //     this.emit('newMessage', { chat, message });
+  //   }
+
+  //   // Отправляем на сервер
+  //   this.pendingMessages.set(messageId, message);
+  //   this.ws.send('message', {
+  //     chatId,
+  //     text: text.trim(),
+  //     messageId,
+  //     from: this.currentUser.id,
+  //   });
+  // }
+
   sendMessage(chatId, text) {
+    // Валидация входных параметров
     if (!chatId || !text?.trim()) {
-      throw new Error('Некорректные данные сообщения');
+      console.warn('⚠️ Некорректные параметры сообщения');
+      return Promise.reject(new Error('Некорректные параметры сообщения'));
     }
 
-    const messageId = crypto.randomUUID();
-    const message = new Message({
-      id: messageId,
-      from: this.currentUser.id,
-      chatId,
-      text: text.trim(),
-      timestamp: Date.now(),
-      status: 'sending',
-    });
+    if (!this.currentUser) {
+      console.warn('⚠️ Пользователь не авторизован');
+      return Promise.reject(new Error('Пользователь не авторизован'));
+    }
 
-    // Добавляем сообщение локально сразу
     const chat = this.chats.get(chatId);
-    if (chat) {
+    if (!chat) {
+      console.warn('⚠️ Чат не найден:', chatId);
+      return Promise.reject(new Error('Чат не найден'));
+    }
+
+    return new Promise((resolve, reject) => {
+      const messageId = crypto.randomUUID();
+      const message = new Message({
+        id: messageId,
+        from: this.currentUser.id,
+        chatId,
+        text: text.trim(),
+        timestamp: Date.now(),
+        status: Message.STATUSES.SENDING,
+      });
+
+      // Добавляем сообщение локально
       chat.addMessage(message);
       this.emit('newMessage', { chat, message });
-    }
 
-    // Отправляем на сервер
-    this.pendingMessages.set(messageId, message);
-    this.ws.send('message', {
-      chatId,
-      text: text.trim(),
-      messageId,
-      from: this.currentUser.id,
+      // Таймаут для отправки
+      const timeout = setTimeout(() => {
+        this.pendingMessages.delete(messageId);
+        message.status = Message.STATUSES.FAILED;
+        this.emit('messageUpdate', { chat, message });
+        reject(new Error('Таймаут отправки сообщения'));
+      }, 10000);
+
+      // Обработчик успешной отправки
+      const onMessageSent = (response) => {
+        if (response.messageId === messageId) {
+          clearTimeout(timeout);
+          this.ws.off('messageSent', onMessageSent);
+          this.ws.off('messageError', onMessageError);
+
+          this.pendingMessages.delete(messageId);
+          message.status = Message.STATUSES.SENT;
+          Object.assign(message, response.message);
+
+          this.emit('messageUpdate', { chat, message });
+          resolve(message);
+        }
+      };
+
+      // Обработчик ошибки
+      const onMessageError = (error) => {
+        if (error.messageId === messageId) {
+          clearTimeout(timeout);
+          this.ws.off('messageSent', onMessageSent);
+          this.ws.off('messageError', onMessageError);
+
+          this.pendingMessages.delete(messageId);
+          message.status = Message.STATUSES.FAILED;
+          this.emit('messageUpdate', { chat, message });
+          reject(new Error(error.message || 'Ошибка отправки сообщения'));
+        }
+      };
+
+      // Подписываемся на события
+      this.ws.on('messageSent', onMessageSent);
+      this.ws.on('messageError', onMessageError);
+
+      // Сохраняем сообщение в очереди ожидания
+      this.pendingMessages.set(messageId, {
+        message,
+        timestamp: Date.now(),
+        cleanup: () => {
+          clearTimeout(timeout);
+          this.ws.off('messageSent', onMessageSent);
+          this.ws.off('messageError', onMessageError);
+        },
+      });
+
+      // Отправляем на сервер
+      this.ws.send('message', {
+        chatId,
+        text: message.text,
+        messageId,
+        from: this.currentUser.id,
+      });
     });
   }
 

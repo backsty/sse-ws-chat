@@ -42,17 +42,24 @@ export class ChatManager {
   addMessage(chatId, fromId, text) {
     const chat = this.chats.get(chatId);
     if (!chat) {
-      throw new Error("Чат не найден");
+      logger.warn("Attempt to send message to unavailable chat", { chatId });
+      return null;
+    }
+
+    // Проверяем, что отправитель является участником чата
+    if (!chat.hasParticipant(fromId)) {
+      logger.warn("User not in chat participants", { chatId, userId: fromId });
+      return null;
     }
 
     const message = new Message(fromId, text);
     chat.addMessage(message);
 
-    // Отправляем сообщение всем участникам чата
+    // Отправляем сообщение только активным участникам
     chat.participants.forEach((userId) => {
-      if (userId !== fromId) {
-        const user = this.userManager.getUser(userId);
-        user?.send({
+      const user = this.userManager.getUser(userId);
+      if (user && user.isConnected()) {
+        user.send({
           type: "message",
           chatId,
           message: message.toJSON(),
@@ -60,8 +67,12 @@ export class ChatManager {
       }
     });
 
-    logger.info(`Новое сообщение в чате ${chatId}`);
+    logger.info("New message in chat", { chatId, messageId: message.id });
     return message;
+  }
+
+  chatExists(chatId) {
+    return this.chats.has(chatId);
   }
 
   removeChat(chatId) {

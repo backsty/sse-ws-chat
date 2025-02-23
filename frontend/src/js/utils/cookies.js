@@ -1,19 +1,29 @@
 export class CookieManager {
   static set(name, value, days = 7) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+    try {
+      const expires = new Date();
+      expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+
+      // Используем более безопасные параметры для куки
+      document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+    } catch (error) {
+      console.error('❌ Ошибка сохранения куки:', error);
+    }
   }
 
   static get(name) {
-    const nameEQ = `${name}=`;
-    const cookies = document.cookie.split(';');
+    try {
+      const nameEQ = `${name}=`;
+      const cookies = document.cookie.split(';');
 
-    for (let cookie of cookies) {
-      cookie = cookie.trim();
-      if (cookie.indexOf(nameEQ) === 0) {
-        return cookie.substring(nameEQ.length);
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.indexOf(nameEQ) === 0) {
+          return decodeURIComponent(cookie.substring(nameEQ.length));
+        }
       }
+    } catch (error) {
+      console.error('❌ Ошибка чтения куки:', error);
     }
     return null;
   }
