@@ -105,7 +105,7 @@ export class ChatWindow {
       <div class="message-content">
         <div class="message-text">${message.text}</div>
         <div class="message-time">${formatTime(message.timestamp)}</div>
-        ${message.status ? `<div class="message-status">${message.status}</div>` : ''}
+        // ${message.status ? `<div class="message-status">${message.status}</div>` : ''}
       </div>
     `;
 
